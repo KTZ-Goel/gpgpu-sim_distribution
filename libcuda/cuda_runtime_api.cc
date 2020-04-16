@@ -171,7 +171,7 @@ struct cudaArray {
 #endif /* !__dv */
 
 cudaError_t g_last_cudaError = cudaSuccess;
-
+typedef unsigned long long new_addr_type;
 void register_ptx_function(const char *name, function_info *impl) {
   // no longer need this
 }
@@ -906,14 +906,14 @@ cudaError_t cudaSetupArgumentInternal(const void *arg, size_t size,
 
 	CUctx_st* context = GPGPUSim_Context();
 
-	uint64_t hostPtr = *(uint64_t *)arg;
+	new_addr_type hostPtr = *(new_addr_type *)arg;
 
     struct allocation_info*  allocation = context->get_device()->get_gpgpu()->gpu_get_managed_allocation(hostPtr);
 
 	if (allocation != NULL) { //verify whether a pointer to malloc managed memory
 	    //during the kernel launch copy all the data from cpu to gpu
 	    //pages are valid or invalid are tested later
-            uint64_t devPtr = allocation->gpu_mem_addr;
+            new_addr_type devPtr = allocation->gpu_mem_addr;
 
 		if (!allocation->copied) {
 			context->get_device()->get_gpgpu()->memcpy_to_gpu( (size_t)devPtr, (void *)hostPtr, allocation->allocation_size);
@@ -922,7 +922,7 @@ cudaError_t cudaSetupArgumentInternal(const void *arg, size_t size,
 
 	    //override the pointer argument to refer to gpu side allocation rather than cpu side memory
 	    //gpgpu-sim only understands pointer reference from m_dev_malloc 
-	    *(uint64_t *)arg = devPtr;
+	    *(new_addr_type *)arg = devPtr;
     }
 
 	// ******	
@@ -1049,7 +1049,7 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
 	//// TO_BE_ADDED :   A Function which creates a tuple and add it the map/dictionary(gpu_insert_managed_allocation)
 	//maintain a map keyed by cpu memory pointer 
 	//with a tuple of gpu malloc memory pointe and allocation size as value
-    context->get_device()->get_gpgpu()->gpu_insert_managed_allocation((uint64_t)cpuMemPtr, (uint64_t)gpuMemPtr, size);
+    context->get_device()->get_gpgpu()->gpu_insert_managed_allocation((new_addr_type)cpuMemPtr, (new_addr_type)gpuMemPtr, size);
 	
 	//at the begining itself allocate memory storage for gpu malloced allocation
 	//note after this point data is not initialized on CPU 
@@ -2347,12 +2347,12 @@ cudaDeviceSynchronizeInternal(gpgpu_context *gpgpu_ctx = NULL) {
     announce_call(__my_func__);
   }
 
-	for(std::map<uint64_t, struct allocation_info*>::const_iterator iter = managedAllocations.begin(); iter != managedAllocations.end(); iter++) 
+	for(std::map<new_addr_type, struct allocation_info*>::const_iterator iter = managedAllocations.begin(); iter != managedAllocations.end(); iter++) 
 	{
 		if (iter->second->copied) 
 		{
-			uint64_t hostPtr = iter->first;
-            uint64_t devPtr  = iter->second->gpu_mem_addr;
+			new_addr_type hostPtr = iter->first;
+            new_addr_type devPtr  = iter->second->gpu_mem_addr;
             size_t   size    = iter->second->allocation_size;
 			iter->second->copied = false;
             context->get_device()->get_gpgpu()->memcpy_from_gpu( (void *)hostPtr, (size_t)devPtr, size);   
