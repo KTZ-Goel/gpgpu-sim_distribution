@@ -564,7 +564,7 @@ class gpgpu_t {
   // Added Changes Kshitiz for Managed Allocations
   void* gpu_malloc_managed( size_t size );
   void  gpu_insert_managed_allocation( uint64_t cpuMemAddr, uint64_t gpuMemAddr, size_t size );
-  void  gpu_get_managed_allocations();
+  std::map<uint64_t, struct allocation_info*>&  gpu_get_managed_allocations();
 
 
   class memory_space *get_global_memory() {
