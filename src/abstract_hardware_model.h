@@ -143,7 +143,7 @@ typedef enum mem_operation_t mem_operation;
 enum _memory_op_t { no_memory_op = 0, memory_load, memory_store };
 
 struct allocation_info {
-    uint64_t gpu_mem_addr;
+    new_addr_type gpu_mem_addr;
     size_t   allocation_size;
     bool     copied;
 };
