@@ -56,13 +56,19 @@ class mem_storage {
   mem_storage(const mem_storage &another) {
     m_data = (unsigned char *)calloc(1, BSIZE);
     memcpy(m_data, another.m_data, BSIZE);
+    managed = false;
+    valid = false;
   }
 
-  managed(false);
-  valid(false);
+  mem_storage() { 
+    m_data = (unsigned char *)calloc(1, BSIZE); 
+    managed = false;
+    valid = false;
+  }
 
-  mem_storage() { m_data = (unsigned char *)calloc(1, BSIZE); }
-  ~mem_storage() { free(m_data); }
+  ~mem_storage() {
+     free(m_data); 
+  }
 
   void write(unsigned offset, size_t length, const unsigned char *data) {
     assert(offset + length <= BSIZE);
