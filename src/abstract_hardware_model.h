@@ -563,8 +563,8 @@ class gpgpu_t {
 
   // Added Changes Kshitiz for Managed Allocations
   void* gpu_malloc_managed( size_t size );
-  void  gpu_insert_managed_allocation( uint64_t cpuMemAddr, uint64_t gpuMemAddr, size_t size );
-  std::map<uint64_t, struct allocation_info*>&  gpu_get_managed_allocations();
+  void  gpu_insert_managed_allocation( new_addr_type cpuMemAddr, new_addr_type gpuMemAddr, size_t size );
+  std::map<new_addr_type, struct allocation_info*>&  gpu_get_managed_allocations();
 
 
   class memory_space *get_global_memory() {
@@ -647,7 +647,7 @@ class gpgpu_t {
   std::map<std::string, const struct cudaArray *> m_NameToCudaArray;
   std::map<std::string, const struct textureInfo *> m_NameToTextureInfo;
   std::map<std::string, const struct textureReferenceAttr *> m_NameToAttribute;
-  std::map<uint64_t, struct allocation_info*> managedAllocations;
+  std::map<new_addr_type, struct allocation_info*> managedAllocations;
 };
 
 struct gpgpu_ptx_sim_info {
