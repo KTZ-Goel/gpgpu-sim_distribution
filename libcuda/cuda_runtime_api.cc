@@ -901,6 +901,32 @@ cudaError_t cudaSetupArgumentInternal(const void *arg, size_t size,
   gpgpusim_ptx_assert(!ctx->api->g_cuda_launch_stack.empty(),
                       "empty launch stack");
   kernel_config &config = ctx->api->g_cuda_launch_stack.back();
+
+	//**** OUR CHANGES (RISHABH)
+
+	CUctx_st* context = GPGPUSim_Context();
+
+	uint64_t hostPtr = *(uint64_t *)arg;
+
+    struct allocation_info*  allocation = context->get_device()->get_gpgpu()->gpu_get_managed_allocation(hostPtr);
+
+	if (allocation != NULL) { //verify whether a pointer to malloc managed memory
+	    //during the kernel launch copy all the data from cpu to gpu
+	    //pages are valid or invalid are tested later
+            uint64_t devPtr = allocation->gpu_mem_addr;
+
+		if (!allocation->copied) {
+			context->get_device()->get_gpgpu()->memcpy_to_gpu( (size_t)devPtr, (void *)hostPtr, allocation->allocation_size);
+			allocation->copied = true;
+	    }
+
+	    //override the pointer argument to refer to gpu side allocation rather than cpu side memory
+	    //gpgpu-sim only understands pointer reference from m_dev_malloc 
+	    *(uint64_t *)arg = devPtr;
+    }
+
+	// ******	
+
   config.set_arg(arg, size, offset);
   printf(
       "GPGPU-Sim PTX: Setting up arguments for %zu bytes starting at "
@@ -1004,6 +1030,45 @@ cudaError_t cudaLaunchInternal(const char *hostFun,
   ctx->the_gpgpusim->g_stream_manager->push(op);
   ctx->api->g_cuda_launch_stack.pop_back();
   return g_last_cudaError = cudaSuccess;
+}
+
+__host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t size) 
+{
+	if(g_debug_execution >= 3){
+	    announce_call(__my_func__);
+    }
+
+	CUctx_st* context = GPGPUSim_Context();
+
+    //create a piece of memory for cpu side so that cpu side initialization code doesn't get SIGSEGV
+	void *cpuMemPtr = (void *)malloc(size);
+
+	//get a regular cudaMalloc memory
+	void *gpuMemPtr = context->get_device()->get_gpgpu()->gpu_malloc_managed(size);	// To be defined (gpu_malloc_managed)
+
+	//// TO_BE_ADDED :   A Function which creates a tuple and add it the map/dictionary(gpu_insert_managed_allocation)
+	//maintain a map keyed by cpu memory pointer 
+	//with a tuple of gpu malloc memory pointe and allocation size as value
+    context->get_device()->get_gpgpu()->gpu_insert_managed_allocation((uint64_t)cpuMemPtr, (uint64_t)gpuMemPtr, size);
+	
+	//at the begining itself allocate memory storage for gpu malloced allocation
+	//note after this point data is not initialized on CPU 
+	//so we need to copy the actual data on kernel launch 
+	context->get_device()->get_gpgpu()->memcpy_to_gpu((size_t)gpuMemPtr, (void *)cpuMemPtr, size);
+
+	//return cpu memory pointer to the user code 
+	//such that cpu side code can access the memory
+	*devPtr = cpuMemPtr;
+
+	if(g_debug_execution >= 3){
+		printf("GPGPU-Sim PTX: cudaMallocManaging %zu bytes starting at 0x%llx..\n",size, (unsigned long long) *devPtr);
+    }
+
+	if ( *devPtr  ) {
+		return g_last_cudaError = cudaSuccess;
+	} else {
+		return g_last_cudaError = cudaErrorMemoryAllocation;
+	}
 }
 
 cudaError_t cudaMallocInternal(void **devPtr, size_t size,
@@ -2281,6 +2346,18 @@ cudaDeviceSynchronizeInternal(gpgpu_context *gpgpu_ctx = NULL) {
   if (g_debug_execution >= 3) {
     announce_call(__my_func__);
   }
+
+	for(std::map<uint64_t, struct allocation_info*>::const_iterator iter = managedAllocations.begin(); iter != managedAllocations.end(); iter++) 
+	{
+		if (iter->second->copied) 
+		{
+			uint64_t hostPtr = iter->first;
+            uint64_t devPtr  = iter->second->gpu_mem_addr;
+            size_t   size    = iter->second->allocation_size;
+			iter->second->copied = false;
+            context->get_device()->get_gpgpu()->memcpy_from_gpu( (void *)hostPtr, (size_t)devPtr, size);   
+		}
+  }
   // Blocks until the device has completed all preceding requested tasks
   ctx->synchronize();
   return g_last_cudaError = cudaSuccess;
@@ -2303,6 +2380,10 @@ cudaError_t cudaPeekAtLastError(void) { return g_last_cudaError; }
 
 __host__ cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size) {
   return cudaMallocInternal(devPtr, size);
+}
+
+__host__ cudaError_t CUDARTAPI cudaMallocManaged(void **devPtr, size_t size) {
+  return cudaMallocManagedInternal(devPtr, size);
 }
 
 __host__ cudaError_t CUDARTAPI cudaMallocHost(void **ptr, size_t size) {

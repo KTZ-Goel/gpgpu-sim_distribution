@@ -142,6 +142,12 @@ typedef enum mem_operation_t mem_operation;
 
 enum _memory_op_t { no_memory_op = 0, memory_load, memory_store };
 
+struct allocation_info {
+    uint64_t gpu_mem_addr;
+    size_t   allocation_size;
+    bool     copied;
+};
+
 #include <assert.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -555,6 +561,12 @@ class gpgpu_t {
   void memcpy_from_gpu(void *dst, size_t src_start_addr, size_t count);
   void memcpy_gpu_to_gpu(size_t dst, size_t src, size_t count);
 
+  // Added Changes Kshitiz for Managed Allocations
+  void* gpu_malloc_managed( size_t size );
+  void  gpu_insert_managed_allocation( uint64_t cpuMemAddr, uint64_t gpuMemAddr, size_t size );
+  void  gpu_get_managed_allocations();
+
+
   class memory_space *get_global_memory() {
     return m_global_mem;
   }
@@ -635,6 +647,7 @@ class gpgpu_t {
   std::map<std::string, const struct cudaArray *> m_NameToCudaArray;
   std::map<std::string, const struct textureInfo *> m_NameToTextureInfo;
   std::map<std::string, const struct textureReferenceAttr *> m_NameToAttribute;
+  std::map<uint64_t, struct allocation_info*> managedAllocations;
 };
 
 struct gpgpu_ptx_sim_info {
