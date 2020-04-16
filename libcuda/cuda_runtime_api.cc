@@ -1075,6 +1075,13 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
 	}
 }
 
+// Dummy function to be changed later
+__host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0)
+{
+  return g_last_cudaError = cudaSuccess;
+  //TO_BE_ADDED Kshitiz
+}
+
 cudaError_t cudaMallocInternal(void **devPtr, size_t size,
                                gpgpu_context *gpgpu_ctx = NULL) {
   gpgpu_context *ctx;
