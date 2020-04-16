@@ -565,6 +565,7 @@ class gpgpu_t {
   void* gpu_malloc_managed( size_t size );
   void  gpu_insert_managed_allocation( new_addr_type cpuMemAddr, new_addr_type gpuMemAddr, size_t size );
   std::map<new_addr_type, struct allocation_info*>&  gpu_get_managed_allocations();
+  struct allocation_info* gpu_find_managed_allocation(new_addr_type cpuMemAddr);
 
 
   class memory_space *get_global_memory() {

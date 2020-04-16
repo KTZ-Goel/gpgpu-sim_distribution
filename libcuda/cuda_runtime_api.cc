@@ -908,7 +908,7 @@ cudaError_t cudaSetupArgumentInternal(const void *arg, size_t size,
 
 	new_addr_type hostPtr = *(new_addr_type *)arg;
 
-    struct allocation_info*  allocation = context->get_device()->get_gpgpu()->gpu_get_managed_allocation(hostPtr);
+    struct allocation_info*  allocation = context->get_device()->get_gpgpu()->gpu_find_managed_allocation(hostPtr);
 
 	if (allocation != NULL) { //verify whether a pointer to malloc managed memory
 	    //during the kernel launch copy all the data from cpu to gpu

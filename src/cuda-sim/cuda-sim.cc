@@ -458,6 +458,15 @@ std::map<new_addr_type, struct allocation_info*>& gpgpu_t::gpu_get_managed_alloc
    return managedAllocations;
 }
 
+struct allocation_info* gpgpu_t::gpu_find_managed_allocation ( new_addr_type cpuMemAddr )
+{
+   if(managedAllocations.find(cpuMemAddr) == managedAllocations.end()) {
+      return NULL;
+   } else { 
+      return managedAllocations[cpuMemAddr];
+   }
+}
+
 void *gpgpu_t::gpu_malloc(size_t size) {
   unsigned long long result = m_dev_malloc;
   if (g_debug_execution >= 3) {
