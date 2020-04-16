@@ -2390,8 +2390,7 @@ __host__ cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size) {
 }
 
 __host__ cudaError_t CUDARTAPI cudaMallocManaged(void **devPtr, size_t size) {
-  // return cudaMallocManagedInternal(devPtr, size);
-  return g_last_cudaError = cudaSuccess
+  return cudaMallocManagedInternal(devPtr, size);
 }
 
 __host__ cudaError_t CUDARTAPI cudaMallocHost(void **ptr, size_t size) {
