@@ -904,7 +904,7 @@ cudaError_t cudaSetupArgumentInternal(const void *arg, size_t size,
 
 	//**** OUR CHANGES (RISHABH)
 
-	CUctx_st* context = GPGPUSim_Context();
+	CUctx_st* context = GPGPUSim_Context(ctx);
 
 	new_addr_type hostPtr = *(new_addr_type *)arg;
 
@@ -2346,6 +2346,9 @@ cudaDeviceSynchronizeInternal(gpgpu_context *gpgpu_ctx = NULL) {
   if (g_debug_execution >= 3) {
     announce_call(__my_func__);
   }
+
+  CUctx_st* context = GPGPUSim_Context(ctx);
+  const std::map<new_addr_type, struct allocation_info*>& managedAllocations = context->get_device()->get_gpgpu()->gpu_get_managed_allocations();
 
 	for(std::map<new_addr_type, struct allocation_info*>::const_iterator iter = managedAllocations.begin(); iter != managedAllocations.end(); iter++) 
 	{
