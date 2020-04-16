@@ -443,7 +443,7 @@ void* gpgpu_t::gpu_malloc_managed( size_t size )
    return gpu_malloc(size);
 }
 
-void gpgpu_t::gpu_insert_managed_allocation ( uint64_t cpuMemAddr, uint64_t gpuMemAddr, size_t size )
+void gpgpu_t::gpu_insert_managed_allocation ( new_addr_type cpuMemAddr, new_addr_type gpuMemAddr, size_t size )
 {
    struct allocation_info* a_i = (struct allocation_info*)malloc(sizeof(struct allocation_info));
 
@@ -451,10 +451,10 @@ void gpgpu_t::gpu_insert_managed_allocation ( uint64_t cpuMemAddr, uint64_t gpuM
    a_i->allocation_size = size;
    a_i->copied          = false;
 
-   managedAllocations.insert(std::pair<uint64_t, struct allocation_info*>(cpuMemAddr, a_i));
+   managedAllocations.insert(std::pair<new_addr_type, struct allocation_info*>(cpuMemAddr, a_i));
 }
 
-std::map<uint64_t, struct allocation_info*>& gpgpu_t::gpu_get_managed_allocations (){
+std::map<new_addr_type, struct allocation_info*>& gpgpu_t::gpu_get_managed_allocations (){
    return managedAllocations;
 }
 
