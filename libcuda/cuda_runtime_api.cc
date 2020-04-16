@@ -1034,11 +1034,16 @@ cudaError_t cudaLaunchInternal(const char *hostFun,
 
 __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t size) 
 {
-	if(g_debug_execution >= 3){
-	    announce_call(__my_func__);
-    }
-
-	CUctx_st* context = GPGPUSim_Context();
+  gpgpu_context *ctx;
+  if (gpgpu_ctx) {
+    ctx = gpgpu_ctx;
+  } else {
+    ctx = GPGPU_Context();
+  }
+  if (g_debug_execution >= 3) {
+    announce_call(__my_func__);
+  }
+  CUctx_st *context = GPGPUSim_Context(ctx);
 
     //create a piece of memory for cpu side so that cpu side initialization code doesn't get SIGSEGV
 	void *cpuMemPtr = (void *)malloc(size);
