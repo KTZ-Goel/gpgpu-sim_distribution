@@ -260,6 +260,13 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_fau
   return page_list;
 }
 
+
+template class memory_space_impl<32>;
+template class memory_space_impl<64>;
+template class memory_space_impl<4096>;
+template class memory_space_impl<1024*1024*2>;
+template class memory_space_impl<16*1024>;
+
 #ifdef UNIT_TEST
 
 int main(int argc, char *argv[]) {
