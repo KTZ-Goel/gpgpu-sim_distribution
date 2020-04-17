@@ -2,14 +2,14 @@ Simply Optmistic changes:
 
 0. Create data structure where gpu address is mapped to its corresponding page data structure, (this should be done at cudaMallocManaged) : Here, gpu address 
    and the size will be used to fill corresponding pages and its page related data structure.  
-    KINDA DONE
+    De Dana DONE
 
-1. We have to make two Queues: -> One from CU To GMMU  and One from GMMU to CU, inspired by Ganguly (Dada).
+1. We have to make two Queues: -> One from CU To GMMU  and One from GMMU to CU, inspired by Ganguly (Dada).  
 
 2. In Shader.cc: -> Create an function, (kind of like access_cycle): Get the page Id from the input address and get whether 
 it is managed or not. If not valid (then page fault), push the instruction to cluster units to gmmu queue then delete the instruction from the instruction queue (accessq_pop).
   
-   >> 2.1 : Make pages managed in cudaMallocManaged and valid in cUDAMemPrefetchAsync
+   - 2.1 : Make pages managed in cudaMallocManaged and valid in cUDAMemPrefetchAsync: DONE (MALLOC MANAGED PART)
 
 3. make changes in Shader.cc/memory_cycle function: 
    >>  Add an else condition if inst.access_queue is empty, remove the assert.

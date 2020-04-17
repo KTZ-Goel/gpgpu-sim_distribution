@@ -1230,9 +1230,22 @@ class ldst_unit : public pipelined_simd_unit {
   virtual void cycle();
 
   void fill(mem_fetch *mf);
+  // function to fill the gmmu to cu queue 
+  // from the cluster to load/store unit
+  void fill_mem_access( mem_fetch *mf );
+
   void flush();
   void invalidate();
   void writeback();
+
+  // methods to be called by the clusters
+  // to access the queues (CU to GMMU)
+  bool empty_cu_gmmu_queue() {return m_cu_gmmu_queue.empty();}
+  mem_fetch* front_cu_gmmu_queue() {return m_cu_gmmu_queue.front();}
+  void pop_cu_gmmu_queue() {m_cu_gmmu_queue.pop_front();}
+
+  // method to fill the upward queue (GMMU to CU) by GMMU upon completion of PCI-E transfer
+  void push_gmmu_cu_queue(mem_fetch *mf) { m_gmmu_cu_queue.push_back(mf); }
 
   // accessors
   virtual unsigned clock_multiplier() const;
@@ -1286,7 +1299,7 @@ class ldst_unit : public pipelined_simd_unit {
 
  protected:
   bool accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail,
-                    mem_stage_access_type &fail_type)
+                    mem_stage_access_type &fail_type);
   bool shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
                     mem_stage_access_type &fail_type);
   bool constant_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
@@ -1335,6 +1348,10 @@ class ldst_unit : public pipelined_simd_unit {
   // for debugging
   unsigned long long m_last_inst_gpu_sim_cycle;
   unsigned long long m_last_inst_gpu_tot_sim_cycle;
+
+  // Two Queues for gmmu operations
+  std::list<mem_fetch*> m_gmmu_cu_queue;
+  std::list<mem_fetch*> m_cu_gmmu_queue;
 
   std::vector<std::deque<mem_fetch *>> l1_latency_queue;
   void L1_latency_queue_cycle();
@@ -1820,10 +1837,20 @@ class shader_core_ctx : public core_t {
               bool reset_not_completed);
   void issue_block2core(class kernel_info_t &kernel);
 
+  // Kshitiz Added
+  // Interface CU/SM and cu_gmmu queues
+  bool empty_cu_gmmu_queue() {return m_ldst_unit->empty_cu_gmmu_queue();}
+  mem_fetch* front_cu_gmmu_queue() {return m_ldst_unit->front_cu_gmmu_queue();}
+  void pop_cu_gmmu_queue() {m_ldst_unit->pop_cu_gmmu_queue();}
+
   void cache_flush();
   void cache_invalidate();
   void accept_fetch_response(mem_fetch *mf);
   void accept_ldst_unit_response(class mem_fetch *mf);
+  
+  // method to fill the upward queue (GMMU to CU) in load/store unit 
+  void accept_access_response( mem_fetch *mf );
+  
   void broadcast_barrier_reduction(unsigned cta_id, unsigned bar_id,
                                    warp_set_t warps);
   void set_kernel(kernel_info_t *k) {
@@ -2197,6 +2224,13 @@ class simt_core_cluster {
     m_response_fifo.push_back(mf);
   }
 
+  
+  // interface to be called by gmmu 
+  // to access the downward queues (CU to GMMU) in the cluster by GMMU
+  bool empty_cu_gmmu_queue() { return m_cu_gmmu_queue.empty(); }
+  mem_fetch* front_cu_gmmu_queue() { return m_cu_gmmu_queue.front(); }
+  void pop_cu_gmmu_queue() { m_cu_gmmu_queue.pop_front(); }
+
   void get_pdom_stack_top_info(unsigned sid, unsigned tid, unsigned *pc,
                                unsigned *rpc) const;
   unsigned max_cta(const kernel_info_t &kernel);
@@ -2250,6 +2284,8 @@ class shader_memory_interface : public mem_fetch_interface {
  private:
   shader_core_ctx *m_core;
   simt_core_cluster *m_cluster;
+  std::list<mem_fetch*> m_gmmu_cu_queue;
+  std::list<mem_fetch*> m_cu_gmmu_queue;
 };
 
 class perfect_memory_interface : public mem_fetch_interface {
