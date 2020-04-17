@@ -2261,6 +2261,9 @@ class simt_core_cluster {
   shader_core_stats *m_stats;
   memory_stats_t *m_memory_stats;
   shader_core_ctx **m_core;
+  
+  std::list<mem_fetch*> m_gmmu_cu_queue;
+  std::list<mem_fetch*> m_cu_gmmu_queue;
 
   unsigned m_cta_issue_next_core;
   std::list<unsigned> m_core_sim_order;
@@ -2284,8 +2287,6 @@ class shader_memory_interface : public mem_fetch_interface {
  private:
   shader_core_ctx *m_core;
   simt_core_cluster *m_cluster;
-  std::list<mem_fetch*> m_gmmu_cu_queue;
-  std::list<mem_fetch*> m_cu_gmmu_queue;
 };
 
 class perfect_memory_interface : public mem_fetch_interface {
