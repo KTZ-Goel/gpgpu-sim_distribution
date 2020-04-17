@@ -1218,7 +1218,8 @@ class cache_t;
 
 class ldst_unit : public pipelined_simd_unit {
  public:
-  ldst_unit(mem_fetch_interface *icnt,
+  ldst_unit(class gpgpu_sim *gpu,
+            mem_fetch_interface *icnt,
             shader_core_mem_fetch_allocator *mf_allocator,
             shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
             Scoreboard *scoreboard, const shader_core_config *config,
@@ -1284,13 +1285,15 @@ class ldst_unit : public pipelined_simd_unit {
   void get_L1T_sub_stats(struct cache_sub_stats &css) const;
 
  protected:
-  ldst_unit(mem_fetch_interface *icnt,
+  ldst_unit(class gpgpu_sim* gpu,
+            mem_fetch_interface *icnt,
             shader_core_mem_fetch_allocator *mf_allocator,
             shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
             Scoreboard *scoreboard, const shader_core_config *config,
             const memory_config *mem_config, shader_core_stats *stats,
             unsigned sid, unsigned tpc, l1_cache *new_l1d_cache);
-  void init(mem_fetch_interface *icnt,
+  void init(class gpgpu_sim* gpu,
+            mem_fetch_interface *icnt,
             shader_core_mem_fetch_allocator *mf_allocator,
             shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
             Scoreboard *scoreboard, const shader_core_config *config,
@@ -1348,6 +1351,8 @@ class ldst_unit : public pipelined_simd_unit {
   // for debugging
   unsigned long long m_last_inst_gpu_sim_cycle;
   unsigned long long m_last_inst_gpu_tot_sim_cycle;
+
+  class gpgpu_sim* m_gpu,
 
   // Two Queues for gmmu operations
   std::list<mem_fetch*> m_gmmu_cu_queue;

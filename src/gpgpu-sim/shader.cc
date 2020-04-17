@@ -387,7 +387,7 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
   }
 
   m_ldst_unit =
-      new ldst_unit(m_icnt, m_mem_fetch_allocator, this, &m_operand_collector,
+      new ldst_unit(gpu, m_icnt, m_mem_fetch_allocator, this, &m_operand_collector,
                     m_scoreboard, config, mem_config, stats, shader_id, tpc_id);
   m_fu.push_back(m_ldst_unit);
   m_dispatch_port.push_back(ID_OC_MEM);
@@ -2151,7 +2151,8 @@ void pipelined_simd_unit::issue(register_set &source_reg) {
     }
 */
 
-void ldst_unit::init(mem_fetch_interface *icnt,
+void ldst_unit::init(class gpgpu_sim* gpu,
+                     mem_fetch_interface *icnt,
                      shader_core_mem_fetch_allocator *mf_allocator,
                      shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
                      Scoreboard *scoreboard, const shader_core_config *config,
@@ -2164,6 +2165,7 @@ void ldst_unit::init(mem_fetch_interface *icnt,
   m_operand_collector = operand_collector;
   m_scoreboard = scoreboard;
   m_stats = stats;
+  m_gpu = gpu;  // added Rishabh
   m_sid = sid;
   m_tpc = tpc;
 #define STRSIZE 1024
@@ -2187,7 +2189,8 @@ void ldst_unit::init(mem_fetch_interface *icnt,
   m_last_inst_gpu_tot_sim_cycle = 0;
 }
 
-ldst_unit::ldst_unit(mem_fetch_interface *icnt,
+ldst_unit::ldst_unit(class gpgpu_sim* gpu,
+                     mem_fetch_interface *icnt,
                      shader_core_mem_fetch_allocator *mf_allocator,
                      shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
                      Scoreboard *scoreboard, const shader_core_config *config,
@@ -2196,7 +2199,7 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
     : pipelined_simd_unit(NULL, config, config->smem_latency, core),
       m_next_wb(config) {
   assert(config->smem_latency > 1);
-  init(icnt, mf_allocator, core, operand_collector, scoreboard, config,
+  init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
        mem_config, stats, sid, tpc);
   if (!m_config->m_L1D_config.disabled()) {
     char L1D_name[STRSIZE];
@@ -2215,7 +2218,8 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
   m_name = "MEM ";
 }
 
-ldst_unit::ldst_unit(mem_fetch_interface *icnt,
+ldst_unit::ldst_unit(class gpgpu_sim* gpu,
+                     mem_fetch_interface *icnt,
                      shader_core_mem_fetch_allocator *mf_allocator,
                      shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
                      Scoreboard *scoreboard, const shader_core_config *config,
@@ -2224,7 +2228,7 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
     : pipelined_simd_unit(NULL, config, 3, core),
       m_L1D(new_l1d_cache),
       m_next_wb(config) {
-  init(icnt, mf_allocator, core, operand_collector, scoreboard, config,
+  init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
        mem_config, stats, sid, tpc);
 }
 
@@ -2498,7 +2502,7 @@ void ldst_unit::cycle() {
   
   warp_inst_t &pipe_reg = *m_dispatch_reg;
   enum mem_stage_stall_type rc_fail = NO_RC_FAIL;
-  mem_stage_access_type type;sha
+  mem_stage_access_type type;
   bool done = true;
 
   // process the instruction's memory access queue for Page Table, and PCI-E
