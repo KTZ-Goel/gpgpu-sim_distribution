@@ -1553,12 +1553,6 @@ void shader_core_ctx::execute() {
   }
 }
 
-void ldst_unit::fill_mem_access( mem_fetch *mf) 
-{
-  mf->set_status(MEM_FETCH_INITIALIZED, gpu_sim_cycle+gpu_tot_sim_cycle);
-  m_gmmu_cu_queue.push_back(mf);
-}
-
 void ldst_unit::print_cache_stats(FILE *fp, unsigned &dl1_accesses,
                                   unsigned &dl1_misses) {
   if (m_L1D) {
@@ -1952,6 +1946,12 @@ void ldst_unit::fill(mem_fetch *mf) {
       IN_SHADER_LDST_RESPONSE_FIFO,
       m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
   m_response_fifo.push_back(mf);
+}
+
+void ldst_unit::fill_mem_access( mem_fetch *mf) 
+{
+  mf->set_status(MEM_FETCH_INITIALIZED, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
+  m_gmmu_cu_queue.push_back(mf);
 }
 
 void ldst_unit::flush() {
@@ -2380,7 +2380,7 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
    pipelined_simd_unit::issue(reg_set);
 }
 */
-bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)                                                {
+bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
       return true;
@@ -2391,38 +2391,39 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   if (m_gpu->get_global_memory()->is_page_managed( 
                                                    inst.accessq_front().get_addr(), 
                                                    inst.accessq_front().get_size() 
-                                                  ) ) {  // Check if page is managed       
+                                                  ) ) 
+  {  // Check if page is managed       
       if((inst.accessq_front().get_type() == GLOBAL_ACC_R) || 
        (inst.accessq_front().get_type() == GLOBAL_ACC_W)){  // TBD
         
         if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
           // Page was found in TLB/Page table and doesn't incur a page fault
-          return; 
+          return true; 
         }
         else{
           
           mem_fetch *mf = m_mf_allocator->alloc(inst, inst.accessq_front());
 
-           // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
-            m_cu_gmmu_queue.push_back(mf);
+          // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
+          m_cu_gmmu_queue.push_back(mf);
 
           // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
-            inst.accessq_pop_front();
+          inst.accessq_pop_front();
 
-            //m_core->inc_managed_access_req( mf->get_wid());
-            
-            if( !inst.accessq_empty() ) {
-                  stall_reason = COAL_STALL;
-                  access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
-            }
-            
-            // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
-            return inst.accessq_empty();
+          //m_core->inc_managed_access_req( mf->get_wid());
+          
+          if( !inst.accessq_empty() ) {
+                stall_reason = COAL_STALL;
+                access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
+          }
+          
+          // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
+          return inst.accessq_empty();
         }
       } else {  // if no managed access left then accesq_cycle is done
         return true;
       }
-  } else return true;
+  } else {return true;}
 
 }
 
