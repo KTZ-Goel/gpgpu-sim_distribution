@@ -138,7 +138,7 @@ class memory_space {
 
   // Kshitiz Added
   // Method to find if the page is managed
-  virtual void is_page_managed(mem_addr_t addr, size_t length) = 0;
+  virtual bool is_page_managed(mem_addr_t addr, size_t length) = 0;
 
   // Method to set the page as managed
   virtual void set_pages_managed( mem_addr_t addr, size_t length) = 0;
