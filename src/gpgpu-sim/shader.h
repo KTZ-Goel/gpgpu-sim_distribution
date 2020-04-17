@@ -1352,7 +1352,7 @@ class ldst_unit : public pipelined_simd_unit {
   unsigned long long m_last_inst_gpu_sim_cycle;
   unsigned long long m_last_inst_gpu_tot_sim_cycle;
 
-  class gpgpu_sim* m_gpu,
+  class gpgpu_sim* m_gpu;
 
   // Two Queues for gmmu operations
   std::list<mem_fetch*> m_gmmu_cu_queue;
