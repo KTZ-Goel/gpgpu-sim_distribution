@@ -2406,7 +2406,9 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
         }
         else{
           
-          mem_fetch *mf = m_mf_allocator->alloc(inst, inst.accessq_front());
+          mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_front(),
+                                m_core->get_gpu()->gpu_sim_cycle +
+                                    m_core->get_gpu()->gpu_tot_sim_cycle);
 
           // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
           m_cu_gmmu_queue.push_back(mf);
