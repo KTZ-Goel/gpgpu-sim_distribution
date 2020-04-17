@@ -101,7 +101,7 @@ class mem_storage {
     return managed;
   }
 
-//Valid flag simulates page table like fucntion. If the page table entry not present valid =
+//Valid flag simulates page table like fucntion. If the page table entry not present valid = false
   bool is_valid	()	{ 
     return valid;  
   }
@@ -135,6 +135,21 @@ class memory_space {
   virtual void read(mem_addr_t addr, size_t length, void *data) const = 0;
   virtual void print(const char *format, FILE *fout) const = 0;
   virtual void set_watch(addr_t addr, unsigned watchpoint) = 0;
+
+  // Kshitiz Added
+  // Method to find if the page is managed
+  virtual void is_page_managed(mem_addr_t addr, size_t length) = 0;
+
+  // Method to set the page as managed
+  virtual void set_pages_managed( mem_addr_t addr, size_t length) = 0;
+
+  // Methods to check page table(m_data) and make some changes
+   virtual void	validate_page	(mem_addr_t pg_index) = 0;
+   virtual void	invalidate_page	(mem_addr_t pg_index) = 0;
+   virtual std::list<mem_addr_t>	get_faulty_pages(mem_addr_t addr, size_t length) = 0;
+   virtual mem_addr_t get_page_num (mem_addr_t addr) = 0;
+   virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
+   virtual bool is_valid (mem_addr_t pg_index) = 0;
 };
 
 template <unsigned BSIZE>
@@ -150,14 +165,36 @@ class memory_space_impl : public memory_space {
   virtual void print(const char *format, FILE *fout) const;
 
   virtual void set_watch(addr_t addr, unsigned watchpoint);
+  
+  // Kshitiz Added
+  // Method to find if the page is managed
+  virtual void is_page_managed(mem_addr_t addr, size_t length) = 0;
+
+  // Method to set the page as managed
+  virtual void set_pages_managed( mem_addr_t addr, size_t length) = 0;
+
+  // Methods to check page table(m_data) and make some changes
+   virtual void	validate_page	(mem_addr_t pg_index) = 0;
+   virtual void	invalidate_page	(mem_addr_t pg_index) = 0;
+   virtual std::list<mem_addr_t> get_faulty_pages(mem_addr_t addr, size_t length) = 0;
+   virtual mem_addr_t get_page_num (mem_addr_t addr) = 0;
+   virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
+   virtual bool is_valid (mem_addr_t pg_index) = 0;
 
  private:
   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
                          void *data) const;
   std::string m_name;
   unsigned m_log2_block_size;
+
+  /**
+   * \brief This data structure acts as the page table in this code
+   * Memory storage object acts as a physical page
+   * mem_Addr_t used is the virtual address used to access the pages.
+   */
   typedef mem_map<mem_addr_t, mem_storage<BSIZE> > map_t;
   map_t m_data;
+  
   std::map<unsigned, mem_addr_t> m_watchpoints;
 };
 

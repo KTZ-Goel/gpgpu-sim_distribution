@@ -1285,6 +1285,8 @@ class ldst_unit : public pipelined_simd_unit {
             unsigned sid, unsigned tpc);
 
  protected:
+  bool accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail,
+                    mem_stage_access_type &fail_type)
   bool shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
                     mem_stage_access_type &fail_type);
   bool constant_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,

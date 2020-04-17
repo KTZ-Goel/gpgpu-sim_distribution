@@ -992,7 +992,7 @@ cudaError_t cudaLaunchInternal(const char *hostFun,
   gpgpu_t *gpu = context->get_device()->get_gpgpu();
   checkpoint *g_checkpoint;
   g_checkpoint = new checkpoint();
-  class memory_space *global_mem;
+  class  bal_mem;
   global_mem = gpu->get_global_memory();
 
   if (gpu->resume_option == 1 && (grid->get_uid() == gpu->resume_kernel)) {
@@ -1060,6 +1060,8 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
 	//so we need to copy the actual data on kernel launch 
 	context->get_device()->get_gpgpu()->memcpy_to_gpu((size_t)gpuMemPtr, (void *)cpuMemPtr, size);
 
+  // Set All Pages as Managed 
+  context->get_device()->get_gpgpu()->set_pages_managed( (size_t)gpuMemPtr, size);
 	//return cpu memory pointer to the user code 
 	//such that cpu side code can access the memory
 	*devPtr = cpuMemPtr;

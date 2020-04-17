@@ -2374,6 +2374,53 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
    pipelined_simd_unit::issue(reg_set);
 }
 */
+bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)                                                {
+{
+  if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
+      return true;
+  }
+
+  mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_front().get_addr());
+
+  if (m_gpu->get_global_memory()->is_page_managed( 
+                                                   inst.accessq_front().get_addr(), 
+                                                   inst.accessq_front().get_size() 
+                                                  ) ) {  // Check if page is managed       
+      if((inst.accessq_front().get_type() == GLOBAL_ACC_R) || 
+       (inst.accessq_front().get_type() == GLOBAL_ACC_W)){  // TBD
+        
+        if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
+          // Page was found in TLB/Page table and doesn't incur a page fault
+          return; 
+        }
+        else{
+          
+          mem_fetch *mf = m_mf_allocator->alloc(inst, inst.accessq_front());
+
+           // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
+            m_cu_gmmu_queue.push_back(mf);
+
+          // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
+            inst.accessq_pop_front();
+
+            //m_core->inc_managed_access_req( mf->get_wid());
+            
+            if( !inst.accessq_empty() ) {
+                  stall_reason = COAL_STALL;
+                  access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
+            }
+            
+            // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
+            return inst.accessq_empty();
+        }
+      } else {  // if no managed access left then accesq_cycle is done
+        return true;
+      }
+  } else return true;
+
+}
+
+
 void ldst_unit::cycle() {
   writeback();
   m_operand_collector->step();
@@ -2441,11 +2488,15 @@ void ldst_unit::cycle() {
     m_L1D->cycle();
     if (m_config->m_L1D_config.l1_latency > 0) L1_latency_queue_cycle();
   }
-
+  
   warp_inst_t &pipe_reg = *m_dispatch_reg;
   enum mem_stage_stall_type rc_fail = NO_RC_FAIL;
-  mem_stage_access_type type;
+  mem_stage_access_type type;sha
   bool done = true;
+
+  // process the instruction's memory access queue for Page Table, and PCI-E
+  done = accessq_cycle(pipe_reg, rc_fail, type);
+
   done &= shared_cycle(pipe_reg, rc_fail, type);
   done &= constant_cycle(pipe_reg, rc_fail, type);
   done &= texture_cycle(pipe_reg, rc_fail, type);

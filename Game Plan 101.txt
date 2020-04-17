@@ -1,0 +1,44 @@
+Simply Optmistic changes: 
+
+0. Create data structure where gpu address is mapped to its corresponding page data structure, (this should be done at cudaMallocManaged) : Here, gpu address 
+   and the size will be used to fill corresponding pages and its page related data structure.  
+    KINDA DONE
+
+1. We have to make two Queues: -> One from CU To GMMU  and One from GMMU to CU, inspired by Ganguly (Dada).
+
+2. In Shader.cc: -> Create an function, (kind of like access_cycle): Get the page Id from the input address and get whether 
+it is managed or not. If not valid (then page fault), push the instruction to cluster units to gmmu queue then delete the instruction from the instruction queue (accessq_pop).
+  
+   >> 2.1 : Make pages managed in cudaMallocManaged and valid in cUDAMemPrefetchAsync
+
+3. make changes in Shader.cc/memory_cycle function: 
+   >>  Add an else condition if inst.access_queue is empty, remove the assert.
+   >>  If empty (else part), pop the instruction from gmmu to cluster unit queue, and check if any instrcution available.  
+   >>  If available, then do the same things that has been done, except for this instruction that is popped. 
+    
+*****************
+cu_gmmu_queue -> for cluster unit to memory unit for gpu
+    handles request R/W access requests for Core Clusters and sends to gmmu queue
+gmmu_cu_queue -> for gpu memory unit to cluster units
+    handles all fecthed accesses over pcie to complete the requests
+
+mcore[]->c_cu_queue
+    handles access requests from cores to cluster units
+mcore[]->cu_c_queue
+    handles fecthed requests back to cores
+******************
+
+4. Make sure to write some algo, where we take from cores(c_cu and cu_c) to a Cluster Unit queues(cu_gmmu and gmmu_cu) and visa versa. 
+
+5. Make you own cycle function: GMMU_CYLE : 
+    check whether there is any request in CU_GMMU queue,
+        if yes, then check what type of latency it is.
+            if its a page fault then do not service it until it is resolved to pcie read
+                once the latency is resolved push the command to gmmu_cu queue, and then pop it from cu_gmmu queue.
+
+
+
+
+Wildly Optimistic Future : 
+
+Prefetching can be added. 

@@ -102,6 +102,23 @@ void memory_space_impl<BSIZE>::write(mem_addr_t addr, size_t length,
   }
 }
 
+// Kshitiz Added Methods for managed pages
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_managed(mem_addr_t addr, size_t length)
+{
+  mem_addr_t page_index   = get_page_num (addr+length-1);
+  return m_data[page_index].is_managed();
+}
+
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_managed( mem_addr_t addr, size_t length)
+{
+  mem_addr_t start_page = get_page_num (addr);
+  mem_addr_t end_page   = get_page_num (addr+length-1);
+  while(start_page <= end_page) {
+      m_data[start_page].set_managed();
+      start_page++;
+  }
+}
+
 template <unsigned BSIZE>
 void memory_space_impl<BSIZE>::read_single_block(mem_addr_t blk_idx,
                                                  mem_addr_t addr, size_t length,
@@ -187,6 +204,60 @@ template class memory_space_impl<16 * 1024>;
 void g_print_memory_space(memory_space *mem, const char *format = "%08x",
                           FILE *fout = stdout) {
   mem->print(format, fout);
+}
+
+//Kshitiz added
+// get page number from a virtual address
+template<unsigned BSIZE> mem_addr_t memory_space_impl<BSIZE>::get_page_num (mem_addr_t addr) 
+{
+   return addr >> m_log2_block_size;
+}
+
+// check whether the valid flag of corresponding physical page is set or not
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_valid (mem_addr_t pg_index) 
+{
+   // asserts whether the physical page is allocated. 
+   // should never happen as they are allocated while memcpy.
+   assert(m_data.find(pg_index) != m_data.end()); 
+   return m_data[pg_index].is_valid();
+}
+
+// set the valid flag of corresponding physical page 
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::validate_page (mem_addr_t pg_index)
+{
+   assert(m_data.find(pg_index) != m_data.end());
+   m_data[pg_index].validate_page();
+}
+
+// clear the valid flag of corresponding physical page 
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::invalidate_page (mem_addr_t pg_index)
+{
+   assert(m_data.find(pg_index) != m_data.end());
+   m_data[pg_index].invalidate_page();
+}
+
+template<unsigned BSIZE> mem_addr_t memory_space_impl<BSIZE>::get_mem_addr(mem_addr_t pg_index)
+{
+  return pg_index << m_log2_block_size;
+}
+
+// a variable accessed by a memory address and the datatype size may exceed a page boundary
+// method returns list of page numbers if at all they are faulty or invalid
+template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_faulty_pages (mem_addr_t addr, size_t length)
+{
+  std::list<mem_addr_t> page_list;
+
+  mem_addr_t start_page = get_page_num (addr);
+  mem_addr_t end_page   = get_page_num (addr+length-1);
+  
+  while(start_page <= end_page) {
+      if (!is_valid(start_page)) {
+          page_list.push_back(start_page);
+      }
+      start_page++;
+  }
+
+  return page_list;
 }
 
 #ifdef UNIT_TEST
