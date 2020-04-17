@@ -168,18 +168,18 @@ class memory_space_impl : public memory_space {
   
   // Kshitiz Added
   // Method to find if the page is managed
-  virtual void is_page_managed(mem_addr_t addr, size_t length) = 0;
+  virtual void is_page_managed(mem_addr_t addr, size_t length);
 
   // Method to set the page as managed
-  virtual void set_pages_managed( mem_addr_t addr, size_t length) = 0;
+  virtual void set_pages_managed( mem_addr_t addr, size_t length);
 
   // Methods to check page table(m_data) and make some changes
-   virtual void	validate_page	(mem_addr_t pg_index) = 0;
-   virtual void	invalidate_page	(mem_addr_t pg_index) = 0;
-   virtual std::list<mem_addr_t> get_faulty_pages(mem_addr_t addr, size_t length) = 0;
-   virtual mem_addr_t get_page_num (mem_addr_t addr) = 0;
-   virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
-   virtual bool is_valid (mem_addr_t pg_index) = 0;
+   virtual void	validate_page	(mem_addr_t pg_index);
+   virtual void	invalidate_page	(mem_addr_t pg_index);
+   virtual std::list<mem_addr_t> get_faulty_pages(mem_addr_t addr, size_t length);
+   virtual mem_addr_t get_page_num (mem_addr_t addr);
+   virtual mem_addr_t get_mem_addr(mem_addr_t pg_index);
+   virtual bool is_valid (mem_addr_t pg_index);
 
  private:
   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
@@ -194,7 +194,7 @@ class memory_space_impl : public memory_space {
    */
   typedef mem_map<mem_addr_t, mem_storage<BSIZE> > map_t;
   map_t m_data;
-  
+
   std::map<unsigned, mem_addr_t> m_watchpoints;
 };
 
