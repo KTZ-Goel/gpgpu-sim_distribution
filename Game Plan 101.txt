@@ -27,8 +27,9 @@ mcore[]->c_cu_queue
 mcore[]->cu_c_queue
     handles fecthed requests back to cores
 ******************
+DONE
 
-4. Make sure to write some algo, where we take from cores(c_cu and cu_c) to a Cluster Unit queues(cu_gmmu and gmmu_cu) and visa versa.   
+4. Make sure to write some algo, where we take from cores(c_cu and cu_c) to a Cluster Unit queues(cu_gmmu and gmmu_cu) and visa versa.   DONE
 
 5. Make you own cycle function: GMMU_CYLE : 
     check whether there is any request in CU_GMMU queue,
