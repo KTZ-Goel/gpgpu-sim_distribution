@@ -20,7 +20,7 @@ it is managed or not. If not valid (then page fault), push the instruction to cl
 cu_gmmu_queue -> for cluster unit to memory unit for gpu
     handles request R/W access requests for Core Clusters and sends to gmmu queue
 gmmu_cu_queue -> for gpu memory unit to cluster units
-    handles all fecthed accesses over pcie to complete the requests
+    handles all fetched accesses over pcie to complete the requests
 
 mcore[]->c_cu_queue
     handles access requests from cores to cluster units
@@ -28,7 +28,7 @@ mcore[]->cu_c_queue
     handles fecthed requests back to cores
 ******************
 
-4. Make sure to write some algo, where we take from cores(c_cu and cu_c) to a Cluster Unit queues(cu_gmmu and gmmu_cu) and visa versa. 
+4. Make sure to write some algo, where we take from cores(c_cu and cu_c) to a Cluster Unit queues(cu_gmmu and gmmu_cu) and visa versa.   
 
 5. Make you own cycle function: GMMU_CYLE : 
     check whether there is any request in CU_GMMU queue,

@@ -214,6 +214,17 @@ class shd_warp_t {
     m_stores_outstanding--;
   }
 
+  // Kshitiz Added
+  bool managed_access_done() const { return m_managed_access_outstanding == 0;}
+  void inc_managed_access_req() { 
+    m_managed_access_outstanding++;
+  }
+  void dec_managed_access_req()
+  {
+    assert( m_managed_access_outstanding > 0 );
+    m_managed_access_outstanding--;
+  }
+
   unsigned num_inst_in_buffer() const {
     unsigned count = 0;
     for (unsigned i = 0; i < IBUFFER_SIZE; i++) {
@@ -274,6 +285,7 @@ class shd_warp_t {
 
   unsigned m_stores_outstanding;  // number of store requests sent but not yet
                                   // acknowledged
+  unsigned m_managed_access_outstanding;  // number of managed accesses raised but not yet acknowledged
   unsigned m_inst_in_pipeline;
 
   // Jin: cdp support
@@ -1321,6 +1333,11 @@ class ldst_unit : public pipelined_simd_unit {
   mem_stage_stall_type process_memory_access_queue_l1cache(l1_cache *cache,
                                                            warp_inst_t &inst);
 
+  virtual mem_stage_stall_type process_managed_cache_access( 
+      cache_t* cache, new_addr_type address, std::list<cache_event>& events,
+      mem_fetch *mf, enum cache_request_status status );
+  mem_stage_stall_type process_managed_memory_access_queue( cache_t *cache );
+
   const memory_config *m_memory_config;
   class mem_fetch_interface *m_icnt;
   shader_core_mem_fetch_allocator *m_mf_allocator;
@@ -1898,6 +1915,15 @@ class shader_core_ctx : public core_t {
   void dec_inst_in_pipeline(unsigned warp_id) {
     m_warp[warp_id].dec_inst_in_pipeline();
   }  // also used in writeback()
+  
+  // Kshitiz Added for handling managed accesses
+  void inc_managed_access_req( unsigned warp_id) { 
+    m_warp[warp_id].inc_managed_access_req();
+  }
+  void dec_managed_access_req( unsigned warp_id) { 
+    m_warp[warp_id].dec_managed_access_req();
+  }
+    
   void store_ack(class mem_fetch *mf);
   bool warp_waiting_at_mem_barrier(unsigned warp_id);
   void set_max_cta(const kernel_info_t &kernel);

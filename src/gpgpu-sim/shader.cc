@@ -1664,6 +1664,66 @@ bool ldst_unit::shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
   return !stall;
 }
 
+mem_stage_stall_type
+ldst_unit::process_managed_cache_access( cache_t* cache,
+                                new_addr_type address,
+                                std::list<cache_event>& events,
+                                mem_fetch *mf, 
+                                enum cache_request_status status )
+{
+   mem_stage_stall_type result = NO_RC_FAIL;
+   bool write_sent = was_write_sent(events);
+   bool read_sent = was_read_sent(events);
+   if( write_sent ) 
+       m_core->inc_store_req( mf->get_inst().warp_id() );
+   if ( status == HIT ) {
+       assert( !read_sent );
+       m_core->dec_managed_access_req( mf->get_wid() );
+       m_cu_core_queue.pop_front();
+       if ( mf->get_inst().is_load()) {
+           for ( unsigned r=0; r < 4; r++) 
+               if (mf->get_inst().out[r] > 0) 
+                   m_pending_writes[ mf->get_inst().warp_id() ][mf->get_inst().out[r]]--;
+
+           bool pending_requests=false;
+           warp_inst_t &pipe_reg = mf->get_inst();
+           unsigned warp_id = mf->get_wid();
+           for( unsigned r=0; r<4; r++ ) {
+               unsigned reg_id = pipe_reg.out[r];
+               if( reg_id > 0 ) {
+                   if( m_pending_writes[warp_id].find(reg_id) != m_pending_writes[warp_id].end() ) {
+                       if ( m_pending_writes[warp_id][reg_id] > 0 ) {
+                           pending_requests=true;
+                           break;
+                       } else {
+                           // this instruction is done already
+                           m_pending_writes[warp_id].erase(reg_id);
+                       }
+                   }
+               }
+           }
+           if( !pending_requests ) {
+               m_core->warp_inst_complete(pipe_reg);
+               m_scoreboard->releaseRegisters(&pipe_reg);
+           } 
+       }
+       if( !write_sent ) 
+        delete mf;
+
+   } else if ( status == RESERVATION_FAIL ) {
+       result = COAL_STALL;
+       assert( !read_sent );
+       assert( !write_sent );
+   } else {
+       assert( status == MISS || status == HIT_RESERVED );
+       //inst.clear_active( access.get_warp_mask() ); // threads in mf writeback when mf returns
+
+       m_core->dec_managed_access_req( mf->get_wid() );
+       m_cu_gmmu_queue.pop_front();
+   }    
+   return result;
+}
+
 mem_stage_stall_type ldst_unit::process_cache_access(
     cache_t *cache, new_addr_type address, warp_inst_t &inst,
     std::list<cache_event> &events, mem_fetch *mf,
@@ -1700,6 +1760,18 @@ mem_stage_stall_type ldst_unit::process_cache_access(
   }
   if (!inst.accessq_empty() && result == NO_RC_FAIL) result = COAL_STALL;
   return result;
+}
+
+mem_stage_stall_type ldst_unit::process_managed_memory_access_queue( cache_t *cache )
+{
+   if( !cache->data_port_free() )
+       return DATA_PORT_STALL;
+
+   //const mem_access_t &access = inst.accessq_back();
+   mem_fetch *mf = m_cu_core_queue.front();
+   std::list<cache_event> events;
+   enum cache_request_status status = cache->access(mf->get_addr(),mf,gpu_sim_cycle+gpu_tot_sim_cycle,events);
+   return process_managed_cache_access( cache, mf->get_addr(), events, mf, status );
 }
 
 mem_stage_stall_type ldst_unit::process_memory_access_queue(cache_t *cache,
@@ -1880,61 +1952,127 @@ bool ldst_unit::texture_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
 bool ldst_unit::memory_cycle(warp_inst_t &inst,
                              mem_stage_stall_type &stall_reason,
                              mem_stage_access_type &access_type) {
-  if (inst.empty() || ((inst.space.get_type() != global_space) &&
-                       (inst.space.get_type() != local_space) &&
-                       (inst.space.get_type() != param_space_local)))
-    return true;
-  if (inst.active_count() == 0) return true;
-  assert(!inst.accessq_empty());
+  if ( m_cu_core_queue.empty() ) 
+  {
+    if (inst.empty() || ((inst.space.get_type() != global_space) &&
+                        (inst.space.get_type() != local_space) &&
+                        (inst.space.get_type() != param_space_local)))
+      return true;
+    if (inst.active_count() == 0) return true;
+  }
+  //assert(!inst.accessq_empty());    
   mem_stage_stall_type stall_cond = NO_RC_FAIL; 
-  const mem_access_t &access = inst.accessq_front();
+  
+  
+  if( !inst.accessq_empty() ) {
+    const mem_access_t &access = inst.accessq_front();
 
-  bool bypassL1D = false;
-  if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
-    bypassL1D = true;
-  } else if (inst.space.is_global()) {  // global memory access
-    // skip L1 cache if the option is enabled
-    if (m_core->get_config()->gmem_skip_L1D && (CACHE_L1 != inst.cache_op))
+    bool bypassL1D = false;
+    if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
       bypassL1D = true;
-  }
-  if (bypassL1D) {
-    // bypass L1 cache
-    unsigned control_size =
-        inst.is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
-    unsigned size = access.get_size() + control_size;
-    // printf("Interconnect:Addr: %x, size=%d\n",access.get_addr(),size);
-    if (m_icnt->full(size, inst.is_store() || inst.isatomic())) {
-      stall_cond = ICNT_RC_FAIL;
-    } else {
-      mem_fetch *mf =
-          m_mf_allocator->alloc(inst, access,
-                                m_core->get_gpu()->gpu_sim_cycle +
-                                    m_core->get_gpu()->gpu_tot_sim_cycle);
-      m_icnt->push(mf);
-      inst.accessq_pop_front();
-      // inst.clear_active( access.get_warp_mask() );
-      if (inst.is_load()) {
-        for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
-          if (inst.out[r] > 0)
-            assert(m_pending_writes[inst.warp_id()][inst.out[r]] > 0);
-      } else if (inst.is_store())
-        m_core->inc_store_req(inst.warp_id());
+    } else if (inst.space.is_global()) {  // global memory access
+      // skip L1 cache if the option is enabled
+      if (m_core->get_config()->gmem_skip_L1D && (CACHE_L1 != inst.cache_op))
+        bypassL1D = true;
     }
-  } else {
-    assert(CACHE_UNDEFINED != inst.cache_op);
-    stall_cond = process_memory_access_queue_l1cache(m_L1D, inst);
-  }
-  if (!inst.accessq_empty() && stall_cond == NO_RC_FAIL)
-    stall_cond = COAL_STALL;
-  if (stall_cond != NO_RC_FAIL) {
-    stall_reason = stall_cond;
-    bool iswrite = inst.is_store();
-    if (inst.space.is_local())
-      access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
+    if (bypassL1D) {
+      // bypass L1 cache
+      unsigned control_size =
+          inst.is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
+      unsigned size = access.get_size() + control_size;
+      // printf("Interconnect:Addr: %x, size=%d\n",access.get_addr(),size);
+      if (m_icnt->full(size, inst.is_store() || inst.isatomic())) {
+        stall_cond = ICNT_RC_FAIL;
+      } else {
+        mem_fetch *mf =
+            m_mf_allocator->alloc(inst, access,
+                                  m_core->get_gpu()->gpu_sim_cycle +
+                                      m_core->get_gpu()->gpu_tot_sim_cycle);
+        m_icnt->push(mf);
+        inst.accessq_pop_front();
+        // inst.clear_active( access.get_warp_mask() );
+        if (inst.is_load()) {
+          for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
+            if (inst.out[r] > 0)
+              assert(m_pending_writes[inst.warp_id()][inst.out[r]] > 0);
+        } else if (inst.is_store())
+          m_core->inc_store_req(inst.warp_id());
+      }
+    } else {
+      assert(CACHE_UNDEFINED != inst.cache_op);
+      stall_cond = process_memory_access_queue_l1cache(m_L1D, inst);
+    }
+
+    if (!inst.accessq_empty() && stall_cond == NO_RC_FAIL)
+      stall_cond = COAL_STALL;
+    if (stall_cond != NO_RC_FAIL) {
+      stall_reason = stall_cond;
+      bool iswrite = inst.is_store();
+      if (inst.space.is_local())
+        access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
+      else
+        access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
+    }
+    return inst.accessq_empty();
+    
+  }  
+  else
+  {
+    /**
+    * If instruction access queue is empty then fetch from gmmu queue
+    * Rishabh Changes
+    */
+    mem_fetch *mf = m_cu_core_queue.front();
+    bool bypassL1D = false; 
+    if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
+        bypassL1D = true; 
+    } 
+    else if (mf->get_inst().space.is_global()) { // global memory access 
+        // skip L1 cache if the option is enabled
+        if (m_core->get_config()->gmem_skip_L1D) 
+            bypassL1D = true; 
+    }
+
+    if( bypassL1D ) 
+    {
+      // bypass L1 cache
+      unsigned control_size = mf->get_inst().is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
+      unsigned size = mf->get_mem_access().get_size() + control_size;
+      if( m_icnt->full(size, mf->get_inst().is_store() || mf->get_inst().isatomic()) ) {
+          stall_cond = ICNT_RC_FAIL;
+      } 
+      else 
+      {
+          m_icnt->push(mf);
+          m_core->dec_managed_access_req( mf->get_wid() );
+          m_cu_core_queue.pop_front();
+          if( mf->get_inst().is_load() ) 
+          { 
+            for( unsigned r=0; r < 4; r++) 
+                if(mf->get_inst().out[r] > 0) 
+                    assert( m_pending_writes[mf->get_inst().warp_id()][mf->get_inst().out[r]] > 0 );
+          } 
+          else if( mf->get_inst().is_store() ) 
+            m_core->inc_store_req( mf->get_inst().warp_id() );
+      }
+    } 
+    else 
+    {
+      assert( CACHE_UNDEFINED != mf->get_inst().cache_op );
+      stall_cond = process_managed_memory_access_queue(m_L1D);   // TO_BE_ADDED
+    }
+
+    if (stall_cond == NO_RC_FAIL) 
+    {
+      // CURRENTLY UNDefined
+    }
     else
-      access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
+    {
+      // Currently Undefined
+    }
+
+    return true; 
   }
-  return inst.accessq_empty();
 }
 
 bool ldst_unit::response_buffer_full() const {
@@ -2416,7 +2554,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
           inst.accessq_pop_front();
 
-          //m_core->inc_managed_access_req( mf->get_wid());
+          m_core->inc_managed_access_req( mf->get_wid());
           
           if( !inst.accessq_empty() ) {
                 stall_reason = COAL_STALL;
@@ -3641,7 +3779,7 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  return functional_done() && stores_done() && !inst_in_pipeline();
+  return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
 }
 
 bool shd_warp_t::waiting() {
