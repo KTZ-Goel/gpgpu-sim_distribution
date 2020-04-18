@@ -1241,12 +1241,12 @@ class ldst_unit : public pipelined_simd_unit {
 
   // methods to be called by the clusters
   // to access the queues (CU to GMMU)
-  bool empty_cu_gmmu_queue() {return m_cu_gmmu_queue.empty();}
-  mem_fetch* front_cu_gmmu_queue() {return m_cu_gmmu_queue.front();}
-  void pop_cu_gmmu_queue() {m_cu_gmmu_queue.pop_front();}
+  bool empty_core_cu_queue() {return m_core_cu_queue.empty();}
+  mem_fetch* front_core_cu_queue() {return m_core_cu_queue.front();}
+  void pop_core_cu_queue() {m_core_cu_queue.pop_front();}
 
   // method to fill the upward queue (GMMU to CU) by GMMU upon completion of PCI-E transfer
-  void push_gmmu_cu_queue(mem_fetch *mf) { m_gmmu_cu_queue.push_back(mf); }
+  void push_core_cu_queue(mem_fetch *mf) { m_core_cu_queue.push_back(mf); }
 
   // accessors
   virtual unsigned clock_multiplier() const;
@@ -1355,8 +1355,8 @@ class ldst_unit : public pipelined_simd_unit {
   class gpgpu_sim* m_gpu;
 
   // Two Queues for gmmu operations
-  std::list<mem_fetch*> m_gmmu_cu_queue;
-  std::list<mem_fetch*> m_cu_gmmu_queue;
+  std::list<mem_fetch*> m_core_cu_queue;
+  std::list<mem_fetch*> m_cu_core_queue;
 
   std::vector<std::deque<mem_fetch *>> l1_latency_queue;
   void L1_latency_queue_cycle();
@@ -1844,9 +1844,9 @@ class shader_core_ctx : public core_t {
 
   // Kshitiz Added
   // Interface CU/SM and cu_gmmu queues
-  bool empty_cu_gmmu_queue() {return m_ldst_unit->empty_cu_gmmu_queue();}
-  mem_fetch* front_cu_gmmu_queue() {return m_ldst_unit->front_cu_gmmu_queue();}
-  void pop_cu_gmmu_queue() {m_ldst_unit->pop_cu_gmmu_queue();}
+  bool empty_core_cu_queue() {return m_ldst_unit->empty_core_cu_queue();}
+  mem_fetch* front_core_cu_queue() {return m_ldst_unit->front_core_cu_queue();}
+  void pop_core_cu_queue() {m_ldst_unit->pop_core_cu_queue();}
 
   void cache_flush();
   void cache_invalidate();

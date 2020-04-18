@@ -1886,7 +1886,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     return true;
   if (inst.active_count() == 0) return true;
   assert(!inst.accessq_empty());
-  mem_stage_stall_type stall_cond = NO_RC_FAIL;
+  mem_stage_stall_type stall_cond = NO_RC_FAIL; 
   const mem_access_t &access = inst.accessq_front();
 
   bool bypassL1D = false;
@@ -1951,7 +1951,7 @@ void ldst_unit::fill(mem_fetch *mf) {
 void ldst_unit::fill_mem_access( mem_fetch *mf) 
 {
   mf->set_status(MEM_FETCH_INITIALIZED, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
-  m_gmmu_cu_queue.push_back(mf);
+  m_cu_core_queue.push_back(mf);
 }
 
 void ldst_unit::flush() {
@@ -2411,7 +2411,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
                                     m_core->get_gpu()->gpu_tot_sim_cycle);
 
           // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
-          m_cu_gmmu_queue.push_back(mf);
+          m_core_cu_queue.push_back(mf);
 
           // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
           inst.accessq_pop_front();
@@ -4192,10 +4192,10 @@ void simt_core_cluster::icnt_cycle() {
     
     // pop it from the downward queue (CU to GMMU) of the core (SM/CU) and push it to the one in cluster (TPC)
     for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
-       if (!m_core[i]->empty_cu_gmmu_queue()){
-          mem_fetch *mf = m_core[i]->front_cu_gmmu_queue();
+       if (!m_core[i]->empty_core_cu_queue()){
+          mem_fetch *mf = m_core[i]->front_core_cu_queue();
           m_cu_gmmu_queue.push_front(mf);
-          m_core[i]->pop_cu_gmmu_queue();
+          m_core[i]->pop_core_cu_queue();
        }
     }
 
