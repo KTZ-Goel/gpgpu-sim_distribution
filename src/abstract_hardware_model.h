@@ -567,6 +567,8 @@ class gpgpu_t {
   std::map<new_addr_type, struct allocation_info*>&  gpu_get_managed_allocations();
   struct allocation_info* gpu_find_managed_allocation(new_addr_type cpuMemAddr);
 
+  //Method to set the MallocManaged pages as managed
+  void set_pages_managed(size_t addr, size_t size);
 
   class memory_space *get_global_memory() {
     return m_global_mem;

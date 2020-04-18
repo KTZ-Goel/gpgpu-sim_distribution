@@ -467,6 +467,10 @@ struct allocation_info* gpgpu_t::gpu_find_managed_allocation ( new_addr_type cpu
    }
 }
 
+void gpgpu_t::set_pages_managed(size_t addr, size_t count){
+    m_global_mem->set_pages_managed(addr, count);
+}
+
 void *gpgpu_t::gpu_malloc(size_t size) {
   unsigned long long result = m_dev_malloc;
   if (g_debug_execution >= 3) {

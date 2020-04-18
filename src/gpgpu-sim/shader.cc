@@ -1885,7 +1885,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
                        (inst.space.get_type() != param_space_local)))
     return true;
   if (inst.active_count() == 0) return true;
-  assert(!inst.accessq_empty());
+  assert(!inst.accessq_empty())cuda;
   mem_stage_stall_type stall_cond = NO_RC_FAIL;
   const mem_access_t &access = inst.accessq_front();
 

@@ -143,7 +143,7 @@
 #include "../src/gpgpusim_entrypoint.h"
 #include "../src/stream_manager.h"
 #include "../src/abstract_hardware_model.h"
-
+#include "../src/cuda-sim/memory.h"
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -993,7 +993,7 @@ cudaError_t cudaLaunchInternal(const char *hostFun,
   checkpoint *g_checkpoint;
   g_checkpoint = new checkpoint();
   class  bal_mem;
-  global_mem = gpu->get_global_memory();
+  memory_space* global_mem = gpu->get_global_memory();
 
   if (gpu->resume_option == 1 && (grid->get_uid() == gpu->resume_kernel)) {
     char f1name[2048];
