@@ -2553,7 +2553,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           
           // Debug, assume, that the function is processed and returned, lets check here
          
-          list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+          std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
           std::list<mem_addr_t>::iterator iter;
           for( iter = page_list.begin(); iter != page_list.end(); iter++)
           {
