@@ -489,6 +489,7 @@ class gpgpu_sim : public gpgpu_t {
 
   void init();
   void cycle();
+  void memunit_cycle(); // This will be memory cycle
   bool active();
   bool cycle_insn_cta_max_hit() {
     return (m_config.gpu_max_cycle_opt && (gpu_tot_sim_cycle + gpu_sim_cycle) >=

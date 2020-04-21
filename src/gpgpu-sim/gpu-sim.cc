@@ -1680,12 +1680,38 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
+void gpgpu_sim::memunit_cycle()
+{
+  // Dummy, just pull and push
+  for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
+  {
+    if(!(m_gpu->getSIMTCluster(i))->empty_cu_gmmu_queue());
+    {
+      mem_fetch* mf = (m_gpu->getSIMTCluster(i))->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      (m_gpu->getSIMTCluster(i))->pop_cu_gmmu_queue();
+
+    // Validate pages along the way
+      list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      std::list<mem_addr_t>::iterator iter;
+      for( iter = page_list.begin(); iter != page_list.end(); iter++)
+      {
+        m_gpu->get_global_memory()->validate_page(*iter);
+      }
+
+    // The request is serviced.. Feed the mf to the upwards queue
+      (m_gpu->getSIMTCluster(i))->push_gmmu_cu_queue(mf);
+    }
+  }
+}
+
 unsigned long long g_single_step =
     0;  // set this in gdb to single step the pipeline
 
 void gpgpu_sim::cycle() {
   int clock_mask = next_clock_domain();
-
+  
+  /// Add a cycle, and instatiate in gpgpu_sim class
+  memunit_cycle();
   if (clock_mask & CORE) {
     // shader core loading (pop from ICNT into core) follows CORE clock
     for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)

@@ -22,9 +22,9 @@ cu_gmmu_queue -> for cluster unit to memory unit for gpu
 gmmu_cu_queue -> for gpu memory unit to cluster units
     handles all fetched accesses over pcie to complete the requests
 
-mcore[]->c_cu_queue
+ldst_unit :: mcore[]->c_cu_queue
     handles access requests from cores to cluster units
-mcore[]->cu_c_queue
+ldst_unit :: mcore[]->cu_c_queue
     handles fecthed requests back to cores
 ******************
 DONE
@@ -37,9 +37,8 @@ DONE
             if its a page fault then do not service it until it is resolved to pcie read
                 once the latency is resolved push the command to gmmu_cu queue, and then pop it from cu_gmmu queue.
 
-
+    5.1. first compute all the page faults 
 
 
 Wildly Optimistic Future : 
-
-Prefetching can be added. 
+    Prefetching can be added. 
