@@ -2559,7 +2559,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           {
               m_gpu->get_global_memory()->validate_page(*iter);
           }
-          m_core_cu_queue.pop_back(mf);
+          pop_core_cu_queue();
           m_cu_core_queue.push_back(mf);
 
           // Debug end
