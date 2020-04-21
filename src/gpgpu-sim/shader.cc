@@ -2550,6 +2550,21 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
           // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
           m_core_cu_queue.push_back(mf);
+          
+          // Debug, assume, that the function is processed and returned, lets check here
+         
+          list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+          std::list<mem_addr_t>::iterator iter;
+          for( iter = page_list.begin(); iter != page_list.end(); iter++)
+          {
+              m_gpu->get_global_memory()->validate_page(*iter);
+          }
+          m_core_cu_queue.pop_back(mf);
+          m_cu_core_queue.push_back(mf);
+
+          // Debug end
+          
+          
 
           // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
           inst.accessq_pop_front();
