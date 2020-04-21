@@ -555,7 +555,7 @@ class gpgpu_sim : public gpgpu_t {
    * Returning the cluster of of the shader core, used by the functional
    * simulation so far
    */
-  simt_core_cluster *getSIMTCluster();
+  simt_core_cluster *getSIMTCluster(int i);
 
   void hit_watchpoint(unsigned watchpoint_num, ptx_thread_info *thd,
                       const ptx_instruction *pI);

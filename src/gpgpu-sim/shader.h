@@ -2262,6 +2262,8 @@ class simt_core_cluster {
   mem_fetch* front_cu_gmmu_queue() { return m_cu_gmmu_queue.front(); }
   void pop_cu_gmmu_queue() { m_cu_gmmu_queue.pop_front(); }
 
+  void push_gmmu_cu_queue(mem_fetch* mf) {m_gmmu_cu_queue.push_back(mf); }
+
   void get_pdom_stack_top_info(unsigned sid, unsigned tid, unsigned *pc,
                                unsigned *rpc) const;
   unsigned max_cta(const kernel_info_t &kernel);
