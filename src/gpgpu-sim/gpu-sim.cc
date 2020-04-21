@@ -90,6 +90,7 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 #define L2 0x02
 #define DRAM 0x04
 #define ICNT 0x08
+#define MEMUNIT 0x10
 
 #define MEM_LATENCY_STAT_IMPL
 
@@ -1711,7 +1712,9 @@ void gpgpu_sim::cycle() {
   int clock_mask = next_clock_domain();
   
   /// Add a cycle, and instatiate in gpgpu_sim class
-  memunit_cycle();
+  if (clock_mask & MEMUNIT)
+    memunit_cycle();
+  
   if (clock_mask & CORE) {
     // shader core loading (pop from ICNT into core) follows CORE clock
     for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
