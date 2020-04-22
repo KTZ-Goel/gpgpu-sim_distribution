@@ -2564,19 +2564,16 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           m_cu_core_queue.push_back(mf);
           
 
-          // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
+          // remove memory access from the accessq as it is done ( Prevents from going to the regular memory_access)
           inst.accessq_pop_front();
-          std::cout<<"The instruction has been popped"<<std::endl;
+          std::cout<<"The Mem access has been popped"<<std::endl;
 
-          if(inst.accessq_empty())
+          if(!m_cu_core_queue.empty())
           {
-            if(!m_cu_core_queue.empty())
-            {
-              mem_fetch *mf = m_cu_core_queue.front();
-              inst.accessq_push_back( mf->get_mem_access() );
-              std::cout<<"The instruction has been pushed back"<<std::endl;
-              m_cu_core_queue.pop_front();
-            }
+            mem_fetch *mf = m_cu_core_queue.front();
+            (mf->get_inst()).accessq_push_back( mf->get_mem_access() );
+            std::cout<<"The Mem access has been pushed back"<<std::endl;
+            m_cu_core_queue.pop_front();
           }
 
           m_core->inc_managed_access_req( mf->get_wid());
@@ -2677,7 +2674,7 @@ void ldst_unit::cycle() {
   done &= constant_cycle(pipe_reg, rc_fail, type);
   done &= texture_cycle(pipe_reg, rc_fail, type);
   done &= memory_cycle(pipe_reg, rc_fail, type);
-  //std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle<<std::endl;
+  //std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
   m_mem_rc = rc_fail;
 
   if (!done) {  // log stall types and return
