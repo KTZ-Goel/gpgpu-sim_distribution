@@ -1679,6 +1679,8 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
    if ( status == HIT ) {
        assert( !read_sent );
        m_core->dec_managed_access_req( mf->get_wid());
+       std::cout<<"\n Decreased managed access request";
+
        m_cu_core_queue.pop_front();
        if ( mf->get_inst().is_load()) {
            for ( unsigned r=0; r < 4; r++) 
