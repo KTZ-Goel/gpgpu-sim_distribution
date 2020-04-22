@@ -1952,7 +1952,7 @@ bool ldst_unit::texture_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
 bool ldst_unit::memory_cycle(warp_inst_t &inst,
                              mem_stage_stall_type &stall_reason,
                              mem_stage_access_type &access_type) {
-  if(allow_prints)
+
     //std::cout<<"Mem Cycle Called\n";
 
   // if ( m_cu_core_queue.empty() ) 
@@ -1964,6 +1964,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   //   if (inst.active_count() == 0) return true;
   // }
   //assert(!inst.accessq_empty());    
+
   mem_stage_stall_type stall_cond = NO_RC_FAIL; 
   
   
