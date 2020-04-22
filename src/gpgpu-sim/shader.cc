@@ -1955,14 +1955,14 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   if(allow_prints)
     //std::cout<<"Mem Cycle Called\n";
 
-  if ( m_cu_core_queue.empty() ) 
-  {
-    if (inst.empty() || ((inst.space.get_type() != global_space) &&
-                        (inst.space.get_type() != local_space) &&
-                        (inst.space.get_type() != param_space_local)))
-      return true;
-    if (inst.active_count() == 0) return true;
-  }
+  // if ( m_cu_core_queue.empty() ) 
+  // {
+  //   if (inst.empty() || ((inst.space.get_type() != global_space) &&
+  //                       (inst.space.get_type() != local_space) &&
+  //                       (inst.space.get_type() != param_space_local)))
+  //     return true;
+  //   if (inst.active_count() == 0) return true;
+  // }
   //assert(!inst.accessq_empty());    
   mem_stage_stall_type stall_cond = NO_RC_FAIL; 
   
@@ -2687,7 +2687,7 @@ void ldst_unit::cycle() {
   done &= texture_cycle(pipe_reg, rc_fail, type);
   done &= memory_cycle(pipe_reg, rc_fail, type);
   if(allow_prints)
-  std::cout<<" CHECKPOINT: Done :"<<done<<"||  The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
+  std::cout<<" CHECKPOINT: Done : "<<done<<" Is_Load: "<<pipe_reg.is_load()<<" ||  The current time value is "<< m_core->get_gpu()->gpu_sim_cycle << std::endl;
 
   if(m_core->get_gpu()->gpu_sim_cycle < 4500)
     allow_prints = true;
