@@ -1741,7 +1741,8 @@ mem_stage_stall_type ldst_unit::process_cache_access(
   }
   if (status == HIT) {
     assert(!read_sent);
-    inst.accessq_pop_front();
+    //inst.accessq_pop_front();
+    inst.accessq_pop_back();
     if (inst.is_load()) {
       for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
         if (inst.out[r] > 0) m_pending_writes[inst.warp_id()][inst.out[r]]--;
@@ -1756,7 +1757,8 @@ mem_stage_stall_type ldst_unit::process_cache_access(
     assert(status == MISS || status == HIT_RESERVED);
     // inst.clear_active( access.get_warp_mask() ); // threads in mf writeback
     // when mf returns
-    inst.accessq_pop_front();
+    //inst.accessq_pop_front();
+    inst.accessq_pop_back();
   }
   if (!inst.accessq_empty() && result == NO_RC_FAIL) result = COAL_STALL;
   return result;
@@ -1783,7 +1785,8 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue(cache_t *cache,
 
   // const mem_access_t &access = inst.accessq_back();
   mem_fetch *mf = m_mf_allocator->alloc(
-      inst, inst.accessq_front(),
+      //inst, inst.accessq_front(),
+      inst, inst.accessq_back(),
       m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
   std::list<cache_event> events;
   enum cache_request_status status = cache->access(
@@ -1825,7 +1828,8 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
             m_core->inc_store_req(inst.warp_id());
         }
 
-        inst.accessq_pop_front();
+        //inst.accessq_pop_front();
+        inst.accessq_pop_back();
       } else {
         result = BK_CONF;
         delete mf;
@@ -1838,7 +1842,8 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
     return result;
   } else {
     mem_fetch *mf =
-        m_mf_allocator->alloc(inst, inst.accessq_front(),
+        //m_mf_allocator->alloc(inst, inst.accessq_front(),
+         m_mf_allocator->alloc(inst, inst.accessq_back(),
                               m_core->get_gpu()->gpu_sim_cycle +
                                   m_core->get_gpu()->gpu_tot_sim_cycle);
     std::list<cache_event> events;
@@ -1952,20 +1957,21 @@ bool ldst_unit::texture_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
 bool ldst_unit::memory_cycle(warp_inst_t &inst,
                              mem_stage_stall_type &stall_reason,
                              mem_stage_access_type &access_type) {
-  if ( m_cu_core_queue.empty() ) 
-  {
+  //if ( m_cu_core_queue.empty() ) 
+  //{
     if (inst.empty() || ((inst.space.get_type() != global_space) &&
                         (inst.space.get_type() != local_space) &&
                         (inst.space.get_type() != param_space_local)))
       return true;
     if (inst.active_count() == 0) return true;
-  }
-  //assert(!inst.accessq_empty());    
+  //}
+  assert(!inst.accessq_empty());    
   mem_stage_stall_type stall_cond = NO_RC_FAIL; 
   
   
-  if( !inst.accessq_empty() ) {
-    const mem_access_t &access = inst.accessq_front();
+  //if( !inst.accessq_empty() ) {
+    //const mem_access_t &access = inst.accessq_front();
+    const mem_access_t &access = inst.accessq_back();
 
     bool bypassL1D = false;
     if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
@@ -1989,7 +1995,8 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
                                   m_core->get_gpu()->gpu_sim_cycle +
                                       m_core->get_gpu()->gpu_tot_sim_cycle);
         m_icnt->push(mf);
-        inst.accessq_pop_front();
+        //inst.accessq_pop_front();
+        inst.accessq_pop_back();
         // inst.clear_active( access.get_warp_mask() );
         if (inst.is_load()) {
           for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
@@ -2015,13 +2022,9 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     }
     return inst.accessq_empty();
     
-  }  
-  else
+  //}  
+  /*else
   {
-    /**
-    * If instruction access queue is empty then fetch from gmmu queue
-    * Rishabh Changes
-    */
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
     if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
@@ -2072,7 +2075,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     }
 
     return true; 
-  }
+  }*/
 }
 
 bool ldst_unit::response_buffer_full() const {
@@ -2661,7 +2664,7 @@ void ldst_unit::cycle() {
   bool done = true;
 
   // process the instruction's memory access queue for Page Table, and PCI-E
-  done = accessq_cycle(pipe_reg, rc_fail, type);
+  //done = accessq_cycle(pipe_reg, rc_fail, type);
 
   done &= shared_cycle(pipe_reg, rc_fail, type);
   done &= constant_cycle(pipe_reg, rc_fail, type);
@@ -4336,7 +4339,7 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
 void simt_core_cluster::icnt_cycle() {
 
     // pop from upward queue (GMMU to CU) of cluster and push it to the one in core (SM/CU)
-    if ( !m_gmmu_cu_queue.empty() ) {
+    /*if ( !m_gmmu_cu_queue.empty() ) {
       mem_fetch *mf = m_gmmu_cu_queue.front();
       unsigned cid = m_config->sid_to_cid(mf->get_sid());
       m_gmmu_cu_queue.pop_front();
@@ -4350,7 +4353,7 @@ void simt_core_cluster::icnt_cycle() {
           m_cu_gmmu_queue.push_front(mf);
           m_core[i]->pop_core_cu_queue();
        }
-    }
+    }*/
 
   if (!m_response_fifo.empty()) {
     mem_fetch *mf = m_response_fifo.front();
