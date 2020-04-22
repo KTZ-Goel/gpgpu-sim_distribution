@@ -3797,7 +3797,8 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
+  //return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
+    return functional_done() && stores_done() && !inst_in_pipeline();
 }
 
 bool shd_warp_t::waiting() {
