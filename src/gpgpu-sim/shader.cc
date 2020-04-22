@@ -2689,9 +2689,9 @@ void ldst_unit::cycle() {
   std::cout<<" CHECKPOINT: Done : %d"<<done<<"||  The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
 
   if(m_core->get_gpu()->gpu_sim_cycle < 4500)
-  allow_prints = true;
+    allow_prints = true;
   else
-  allow_prints = false;
+    allow_prints = false;
   
   m_mem_rc = rc_fail;
 
