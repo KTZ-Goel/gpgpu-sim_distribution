@@ -1966,7 +1966,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   
   if( !inst.accessq_empty() ) {
     const mem_access_t &access = inst.accessq_front();
-    std::cout<<"GPU Cycle: The list is not empty"<<endl
+    std::cout<<"GPU Cycle: The list is not empty"<<std::endl
     bool bypassL1D = false;
     if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
       bypassL1D = true;
@@ -2022,7 +2022,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     * If instruction access queue is empty then fetch from gmmu queue
     * Rishabh Changes
     */
-    std::cout<<"It shouldnot come here"<<endl;
+    std::cout<<"It shouldnot come here"<<std::endl;
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
     if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
@@ -2566,7 +2566,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
           // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
           inst.accessq_pop_front();
-          std::cout<<"The instruction has been popped"<<endl;
+          std::cout<<"The instruction has been popped"<<std::endl;
 
           if(inst.accessq_empty())
           {
@@ -2574,7 +2574,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
             {
               mem_fetch *mf = m_cu_core_queue.front();
               inst.accessq_push_back( mf->get_mem_access() );
-              std::cout<<"The instruction has been pushed back"<<endl;
+              std::cout<<"The instruction has been pushed back"<<std::endl;
               m_cu_core_queue.pop_front();
             }
           }
@@ -2677,7 +2677,7 @@ void ldst_unit::cycle() {
   done &= constant_cycle(pipe_reg, rc_fail, type);
   done &= texture_cycle(pipe_reg, rc_fail, type);
   done &= memory_cycle(pipe_reg, rc_fail, type);
-  std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle<<endl;
+  std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle<<std::endl;
   m_mem_rc = rc_fail;
 
   if (!done) {  // log stall types and return
