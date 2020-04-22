@@ -1980,6 +1980,9 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
       if (m_core->get_config()->gmem_skip_L1D && (CACHE_L1 != inst.cache_op))
         bypassL1D = true;
     }
+
+    std::cout<<"The BypassL1d value is "<<bypassL1D<<std::endl;
+
     if (bypassL1D) {
       // bypass L1 cache
       unsigned control_size =
@@ -3796,7 +3799,7 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << " Are there any remaining managed accese"<<managed_access_done();
+  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;;
   return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
     //return functional_done() && stores_done() && !inst_in_pipeline();
 }
