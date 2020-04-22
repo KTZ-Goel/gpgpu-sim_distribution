@@ -2686,7 +2686,7 @@ void ldst_unit::cycle() {
   done &= texture_cycle(pipe_reg, rc_fail, type);
   done &= memory_cycle(pipe_reg, rc_fail, type);
   if(allow_prints)
-  std::cout<<" CHECKPOINT: Done : %d"<<done<<"||  The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
+  std::cout<<" CHECKPOINT: Done :"<<done<<"||  The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
 
   if(m_core->get_gpu()->gpu_sim_cycle < 4500)
     allow_prints = true;
