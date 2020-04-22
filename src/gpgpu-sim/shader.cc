@@ -2561,13 +2561,20 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           }
           pop_core_cu_queue();
           m_cu_core_queue.push_back(mf);
-
-          // Debug end
-          
           
 
           // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
           inst.accessq_pop_front();
+
+          if(inst.accessq_empty())
+          {
+            if(!m_cu_core_queue.empty())
+            {
+              mem_fetch *mf = m_cu_core_queue.front();
+              inst.accessq_push_back(mf->get_mem_access());
+              m_cu_core_queue.pop_front();
+            }
+          }
 
           m_core->inc_managed_access_req( mf->get_wid());
           
