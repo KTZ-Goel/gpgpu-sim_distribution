@@ -2677,7 +2677,7 @@ void ldst_unit::cycle() {
     m_stats->gpu_stall_shd_mem_breakdown[type][rc_fail]++;
     return;
   }
-"
+
   if (!pipe_reg.empty()) {
     unsigned warp_id = pipe_reg.warp_id();
     if (pipe_reg.is_load()) {
