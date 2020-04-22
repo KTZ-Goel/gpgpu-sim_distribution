@@ -2575,7 +2575,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           
 
           // remove memory access from the accessq as it is done ( Prevents from going to the regular memory_access)
-          //inst.accessq_pop_front();
+          inst.accessq_pop_front();
           if(allow_prints)
           std::cout<<"The Mem access has been popped"<<std::endl;
 
@@ -2583,7 +2583,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           {
             mem_fetch *mf = m_cu_core_queue.front();
             //(mf->get_inst()).accessq_push_back( mf->get_mem_access() );
-            //inst.accessq_push_back( mf->get_mem_access() );
+            inst.accessq_push_back( mf->get_mem_access() );
             if(allow_prints)
             std::cout<<"The Mem access has been pushed back"<<std::endl;
             m_cu_core_queue.pop_front();
