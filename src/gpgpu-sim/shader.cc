@@ -1679,7 +1679,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
    if ( status == HIT ) {
        assert( !read_sent );
        m_core->dec_managed_access_req( mf->get_wid());
-       std::cout<<"\n Decreased managed access request";
+       std::cout<<"\n HIT ::  Decreased managed access request";
 
        m_cu_core_queue.pop_front();
        if ( mf->get_inst().is_load()) {
@@ -1720,7 +1720,8 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
        assert( status == MISS || status == HIT_RESERVED );
        //inst.clear_active( access.get_warp_mask() ); // threads in mf writeback when mf returns
 
-       m_core->dec_managed_access_req( mf->get_wid());
+       m_core->dec_managed_access_req( mf->get_wid());        // Why decrease here?
+       std::cout<<"\n MISS ::  Decreased managed access request";
        m_cu_core_queue.pop_front();
    }    
    return result;
@@ -1983,7 +1984,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
         bypassL1D = true;
     }
 
-    std::cout<<"The BypassL1d value is "<<bypassL1D<<std::endl;
+    //std::cout<<"The BypassL1d value is "<<bypassL1D<<std::endl;
 
     if (bypassL1D) {
       // bypass L1 cache
@@ -2537,60 +2538,58 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
   mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_front().get_addr());
 
-  if (m_gpu->get_global_memory()->is_page_managed( 
+  if (!m_gpu->get_global_memory()->is_page_managed( 
                                                    inst.accessq_front().get_addr(), 
                                                    inst.accessq_front().get_size() 
                                                   ) ) 
-  {  // Check if page is managed       
-      if((inst.accessq_front().get_type() == GLOBAL_ACC_R) || 
-       (inst.accessq_front().get_type() == GLOBAL_ACC_W)){  // TBD
-        
-        if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
-          // Page was found in TLB/Page table and doesn't incur a page fault
-          return true; 
-        }
-        else{
-          
-          mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_front(),
-                                m_core->get_gpu()->gpu_sim_cycle +
-                                    m_core->get_gpu()->gpu_tot_sim_cycle);
+  {  // Check if page is managed, if not      
+    return true;
+  }
 
-          // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
-          m_core_cu_queue.push_back(mf);
-          
-          // Debug, assume, that the function is processed and returned, lets check here
-         
-          std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-          std::list<mem_addr_t>::iterator iter;
-          for( iter = page_list.begin(); iter != page_list.end(); iter++)
-          {
-              m_gpu->get_global_memory()->validate_page(*iter);
-          }
-          pop_core_cu_queue();
-          m_cu_core_queue.push_back(mf);
+  if((inst.accessq_front().get_type() != GLOBAL_ACC_R) || (inst.accessq_front().get_type() != GLOBAL_ACC_W)){
+      return true;
+  }
 
-          // Debug end
-          
-          
+  if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
+    // Page was found in TLB/Page table and doesn't incur a page fault
+    return true; 
+  }
+  else{
+    mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_front(),
+                          m_core->get_gpu()->gpu_sim_cycle +
+                              m_core->get_gpu()->gpu_tot_sim_cycle);
 
-          // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
-          inst.accessq_pop_front();
+    // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
+    m_core_cu_queue.push_back(mf);
+    
+    // // Debug, assume, that the function is processed and returned, lets check here
+    
+    // std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+    // std::list<mem_addr_t>::iterator iter;
+    // for( iter = page_list.begin(); iter != page_list.end(); iter++)
+    // {
+    //     m_gpu->get_global_memory()->validate_page(*iter);
+    // }
+    // pop_core_cu_queue();
+    // m_cu_core_queue.push_back(mf);
 
-          m_core->inc_managed_access_req( mf->get_wid());
-          
-          if( !inst.accessq_empty() ) {
-                stall_reason = COAL_STALL;
-                access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
-          }
-          
-          // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
-          return inst.accessq_empty();
-        }
-      } else {  // if no managed access left then accesq_cycle is done
-        return true;
-      }
-  } else {return true;}
+    // // Debug end
+    
+    
 
+    // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
+    inst.accessq_pop_front();
+
+    m_core->inc_managed_access_req( mf->get_wid());
+    
+    if( !inst.accessq_empty() ) {
+          stall_reason = COAL_STALL;
+          access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
+    }
+    
+    // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
+    return inst.accessq_empty();
+  }
 }
 
 
@@ -4345,21 +4344,32 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
 void simt_core_cluster::icnt_cycle() {
 
     // pop from upward queue (GMMU to CU) of cluster and push it to the one in core (SM/CU)
-    /*if ( !m_gmmu_cu_queue.empty() ) {
+    if ( !m_gmmu_cu_queue.empty() ) {
       mem_fetch *mf = m_gmmu_cu_queue.front();
       unsigned cid = m_config->sid_to_cid(mf->get_sid());
       m_gmmu_cu_queue.pop_front();
       m_core[cid]->accept_access_response(mf);
-    } 
+    }
     
-    // pop it from the downward queue (CU to GMMU) of the core (SM/CU) and push it to the one in cluster (TPC)
+    // pop a mf from the downward queue (CU to GMMU) of the core (SM/CU) and push it to the one in cluster (TPC)
     for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
        if (!m_core[i]->empty_core_cu_queue()){
           mem_fetch *mf = m_core[i]->front_core_cu_queue();
           m_cu_gmmu_queue.push_front(mf);
           m_core[i]->pop_core_cu_queue();
+
+
+          //Testing code** Kshitiz
+          std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+          std::list<mem_addr_t>::iterator iter;
+          for( iter = page_list.begin(); iter != page_list.end(); iter++)
+          {
+              m_gpu->get_global_memory()->validate_page(*iter);
+          }
+          m_cu_gmmu_queue.pop_front();
+          m_gmmu_cu_queue.push_back(mf);
        }
-    }*/
+    }
 
   if (!m_response_fifo.empty()) {
     mem_fetch *mf = m_response_fifo.front();
