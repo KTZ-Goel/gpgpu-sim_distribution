@@ -1719,7 +1719,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
        //inst.clear_active( access.get_warp_mask() ); // threads in mf writeback when mf returns
 
        m_core->dec_managed_access_req( mf->get_wid() );
-       m_core_cu_queue.pop_front();
+       m_cu_core_queue.pop_front();
    }    
    return result;
 }
