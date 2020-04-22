@@ -992,8 +992,7 @@ cudaError_t cudaLaunchInternal(const char *hostFun,
   gpgpu_t *gpu = context->get_device()->get_gpgpu();
   checkpoint *g_checkpoint;
   g_checkpoint = new checkpoint();
-  class  bal_mem;
-  memory_space* global_mem = gpu->get_global_memory();
+  class memory_space* global_mem = gpu->get_global_memory();
 
   if (gpu->resume_option == 1 && (grid->get_uid() == gpu->resume_kernel)) {
     char f1name[2048];
