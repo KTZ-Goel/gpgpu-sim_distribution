@@ -1241,6 +1241,7 @@ class ldst_unit : public pipelined_simd_unit {
   // modifiers
   virtual void issue(register_set &inst);
   virtual void cycle();
+  bool allow_prints = false;
 
   void fill(mem_fetch *mf);
   // function to fill the gmmu to cu queue 

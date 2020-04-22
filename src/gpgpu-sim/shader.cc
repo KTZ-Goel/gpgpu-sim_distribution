@@ -1952,6 +1952,9 @@ bool ldst_unit::texture_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
 bool ldst_unit::memory_cycle(warp_inst_t &inst,
                              mem_stage_stall_type &stall_reason,
                              mem_stage_access_type &access_type) {
+  if(allow_prints)
+    //std::cout<<"Mem Cycle Called\n";
+
   if ( m_cu_core_queue.empty() ) 
   {
     if (inst.empty() || ((inst.space.get_type() != global_space) &&
@@ -1966,6 +1969,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   
   if( !inst.accessq_empty() ) {
     const mem_access_t &access = inst.accessq_front();
+    if(allow_prints)
     std::cout<<"GPU Cycle: The list is not empty"<<std::endl;
     bool bypassL1D = false;
     if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
@@ -2023,6 +2027,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     * If instruction access queue is empty then fetch from gmmu queue
     * Rishabh Changes
     */
+   if(allow_prints)
     std::cout<<"It shouldnot come here"<<std::endl;
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
@@ -2060,6 +2065,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     } 
     else 
     {
+      if(allow_prints)
       std::cout<<mf->get_inst().cache_op<<std::endl;
       assert( CACHE_UNDEFINED != mf->get_inst().cache_op );
       stall_cond = process_managed_memory_access_queue(m_L1D);   // TO_BE_ADDED
@@ -2568,6 +2574,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
           // remove memory access from the accessq as it is done ( Prevents from going to the regular memory_access)
           //inst.accessq_pop_front();
+          if(allow_prints)
           std::cout<<"The Mem access has been popped"<<std::endl;
 
           if(!m_cu_core_queue.empty())
@@ -2575,6 +2582,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
             mem_fetch *mf = m_cu_core_queue.front();
             //(mf->get_inst()).accessq_push_back( mf->get_mem_access() );
             //inst.accessq_push_back( mf->get_mem_access() );
+            if(allow_prints)
             std::cout<<"The Mem access has been pushed back"<<std::endl;
             m_cu_core_queue.pop_front();
           }
@@ -2677,7 +2685,14 @@ void ldst_unit::cycle() {
   done &= constant_cycle(pipe_reg, rc_fail, type);
   done &= texture_cycle(pipe_reg, rc_fail, type);
   done &= memory_cycle(pipe_reg, rc_fail, type);
-  std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
+  if(allow_prints)
+  std::cout<<" CHECKPOINT: Done : %d"<<done<<"||  The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
+
+  if(m_core->get_gpu()->gpu_sim_cycle < 4500)
+  allow_prints = true;
+  else
+  allow_prints = false;
+  
   m_mem_rc = rc_fail;
 
   if (!done) {  // log stall types and return
