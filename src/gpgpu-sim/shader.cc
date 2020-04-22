@@ -2015,9 +2015,10 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     }
     return inst.accessq_empty();
     
-  }  
+  } 
   else
-  {
+  { 
+    return true;
     /**
     * If instruction access queue is empty then fetch from gmmu queue
     * Rishabh Changes
