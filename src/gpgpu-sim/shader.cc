@@ -3796,7 +3796,7 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << " Are there any remaining managed accese"<<getmanagedinst();
+  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << " Are there any remaining managed accese"<<managed_access_done();
   return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
     //return functional_done() && stores_done() && !inst_in_pipeline();
 }
