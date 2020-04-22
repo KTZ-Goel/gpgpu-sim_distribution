@@ -1684,12 +1684,14 @@ void gpgpu_sim::issue_block2core() {
 void gpgpu_sim::memunit_cycle()
 {
   // Dummy, just pull and push
+  simt_core_cluster * SIMTCluster;
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
-    if(!(getSIMTCluster(i))->empty_cu_gmmu_queue());
+    SIMTCluster = getSIMTCluster(i);
+    if(!SIMTCluster->empty_cu_gmmu_queue());
     {
-      mem_fetch* mf = (getSIMTCluster(i))->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
-      (getSIMTCluster(i))->pop_cu_gmmu_queue();
+      mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      SIMTCluster->pop_cu_gmmu_queue();
 
     // Validate pages along the way
       list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
@@ -1700,7 +1702,7 @@ void gpgpu_sim::memunit_cycle()
       }
 
     // The request is serviced.. Feed the mf to the upwards queue
-      (getSIMTCluster(i))->push_gmmu_cu_queue(mf);
+      SIMTCluster->push_gmmu_cu_queue(mf);
     }
   }
 }
