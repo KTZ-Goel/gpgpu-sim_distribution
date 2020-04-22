@@ -1678,7 +1678,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
        m_core->inc_store_req( mf->get_inst().warp_id() );
    if ( status == HIT ) {
        assert( !read_sent );
-       m_core->dec_managed_access_req( mf->get_wid() );
+       m_core->dec_managed_access_req( mf->get_wid());
        m_cu_core_queue.pop_front();
        if ( mf->get_inst().is_load()) {
            for ( unsigned r=0; r < 4; r++) 
@@ -1718,7 +1718,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
        assert( status == MISS || status == HIT_RESERVED );
        //inst.clear_active( access.get_warp_mask() ); // threads in mf writeback when mf returns
 
-       m_core->dec_managed_access_req( mf->get_wid() );
+       m_core->dec_managed_access_req( mf->get_wid());
        m_cu_core_queue.pop_front();
    }    
    return result;
@@ -1957,19 +1957,18 @@ bool ldst_unit::texture_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
 bool ldst_unit::memory_cycle(warp_inst_t &inst,
                              mem_stage_stall_type &stall_reason,
                              mem_stage_access_type &access_type) {
-  //if ( m_cu_core_queue.empty() ) 
-  //{
+  if ( m_cu_core_queue.empty() ) 
+  {
     if (inst.empty() || ((inst.space.get_type() != global_space) &&
                         (inst.space.get_type() != local_space) &&
                         (inst.space.get_type() != param_space_local)))
       return true;
     if (inst.active_count() == 0) return true;
-  //}
-  assert(!inst.accessq_empty());    
+  }
+  //assert(!inst.accessq_empty());    
   mem_stage_stall_type stall_cond = NO_RC_FAIL; 
   
-  
-  //if( !inst.accessq_empty() ) {
+  if( !inst.accessq_empty() ) {
     //const mem_access_t &access = inst.accessq_front();
     const mem_access_t &access = inst.accessq_back();
 
@@ -2022,8 +2021,8 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     }
     return inst.accessq_empty();
     
-  //}  
-  /*else
+  }  
+  else
   {
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
@@ -2047,7 +2046,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
       else 
       {
           m_icnt->push(mf);
-          m_core->dec_managed_access_req( mf->get_wid() );
+          m_core->dec_managed_access_req( mf->get_wid());
           m_cu_core_queue.pop_front();
           if( mf->get_inst().is_load() ) 
           { 
@@ -2056,13 +2055,13 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
                     assert( m_pending_writes[mf->get_inst().warp_id()][mf->get_inst().out[r]] > 0 );
           } 
           else if( mf->get_inst().is_store() ) 
-            m_core->inc_store_req( mf->get_inst().warp_id() );
+            m_core->inc_store_req( mf->get_inst().warp_id());
       }
     } 
     else 
     {
       assert( CACHE_UNDEFINED != mf->get_inst().cache_op );
-      stall_cond = process_managed_memory_access_queue(m_L1D);   // TO_BE_ADDED
+      stall_cond = process_managed_memory_access_queue(m_L1D);   // ADDED
     }
 
     if (stall_cond == NO_RC_FAIL) 
@@ -2075,7 +2074,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     }
 
     return true; 
-  }*/
+  }
 }
 
 bool ldst_unit::response_buffer_full() const {
@@ -2678,7 +2677,7 @@ void ldst_unit::cycle() {
     m_stats->gpu_stall_shd_mem_breakdown[type][rc_fail]++;
     return;
   }
-
+"
   if (!pipe_reg.empty()) {
     unsigned warp_id = pipe_reg.warp_id();
     if (pipe_reg.is_load()) {
@@ -3797,8 +3796,9 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  //return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
-    return functional_done() && stores_done() && !inst_in_pipeline();
+  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << " And, number of Managed Instruction Remaining "<<getmanagedinst();
+  return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
+    //return functional_done() && stores_done() && !inst_in_pipeline();
 }
 
 bool shd_warp_t::waiting() {
