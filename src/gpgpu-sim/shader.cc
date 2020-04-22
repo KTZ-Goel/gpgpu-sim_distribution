@@ -2683,9 +2683,14 @@ void ldst_unit::cycle() {
   enum mem_stage_stall_type rc_fail = NO_RC_FAIL;
   mem_stage_access_type type;
   bool done = true;
+  
 
   // process the instruction's memory access queue for Page Table, and PCI-E
   done = accessq_cycle(pipe_reg, rc_fail, type);
+  if(pipe_reg.empty())
+  {
+    return; 
+  }
 
   done &= shared_cycle(pipe_reg, rc_fail, type);
   done &= constant_cycle(pipe_reg, rc_fail, type);
