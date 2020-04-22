@@ -2059,6 +2059,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     } 
     else 
     {
+      std::cout<<mf->get_inst().cache_op<<endl;
       assert( CACHE_UNDEFINED != mf->get_inst().cache_op );
       stall_cond = process_managed_memory_access_queue(m_L1D);   // TO_BE_ADDED
     }
