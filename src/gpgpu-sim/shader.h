@@ -216,7 +216,7 @@ class shd_warp_t {
 
   // Kshitiz Added
   bool managed_access_done() const { return m_managed_access_outstanding == 0;}
-  void getmanagedinst() { return m_managed_access_outstanding; }
+  unsigned getmanagedinst() { return m_managed_access_outstanding; }
   
   void inc_managed_access_req() { 
     m_managed_access_outstanding++;
