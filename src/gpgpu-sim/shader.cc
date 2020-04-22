@@ -2573,7 +2573,8 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
           if(!m_cu_core_queue.empty())
           {
             mem_fetch *mf = m_cu_core_queue.front();
-            (mf->get_inst()).accessq_push_back( mf->get_mem_access() );
+            //(mf->get_inst()).accessq_push_back( mf->get_mem_access() );
+            inst.accessq_push_back( mf->get_mem_access() );
             std::cout<<"The Mem access has been pushed back"<<std::endl;
             m_cu_core_queue.pop_front();
           }
