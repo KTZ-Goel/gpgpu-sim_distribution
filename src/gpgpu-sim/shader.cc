@@ -2677,7 +2677,7 @@ void ldst_unit::cycle() {
   done &= constant_cycle(pipe_reg, rc_fail, type);
   done &= texture_cycle(pipe_reg, rc_fail, type);
   done &= memory_cycle(pipe_reg, rc_fail, type);
-  //std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
+  std::cout<<" CHECKPOINT: The current time value is "<<m_core->get_gpu()->gpu_sim_cycle<<std::endl;
   m_mem_rc = rc_fail;
 
   if (!done) {  // log stall types and return
