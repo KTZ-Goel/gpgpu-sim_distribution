@@ -2347,6 +2347,7 @@ ldst_unit::ldst_unit(class gpgpu_sim* gpu,
     : pipelined_simd_unit(NULL, config, config->smem_latency, core),
       m_next_wb(config) {
         allow_prints = false;
+        cycleOdd = true;
   assert(config->smem_latency > 1);
   init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
        mem_config, stats, sid, tpc);
@@ -2538,6 +2539,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
       return true;
   }
+  cycleOdd = !cycleOdd;
 
   mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_front().get_addr());
 
@@ -2581,12 +2583,14 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
           if(!m_cu_core_queue.empty())
           {
+            if(cycleOdd){
             mem_fetch *mf = m_cu_core_queue.front();
             //(mf->get_inst()).accessq_push_back( mf->get_mem_access() );
             inst.accessq_push_back( mf->get_mem_access() );
             if(allow_prints)
             std::cout<<"The Mem access has been pushed back"<<std::endl;
             m_cu_core_queue.pop_front();
+            }
           }
 
           m_core->inc_managed_access_req( mf->get_wid());
