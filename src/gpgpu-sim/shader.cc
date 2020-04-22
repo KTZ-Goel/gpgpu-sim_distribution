@@ -2345,6 +2345,7 @@ ldst_unit::ldst_unit(class gpgpu_sim* gpu,
                      unsigned sid, unsigned tpc)
     : pipelined_simd_unit(NULL, config, config->smem_latency, core),
       m_next_wb(config) {
+        allow_prints = false;
   assert(config->smem_latency > 1);
   init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
        mem_config, stats, sid, tpc);
