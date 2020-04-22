@@ -1713,7 +1713,7 @@ void gpgpu_sim::cycle() {
   
   /// Add a cycle, and instatiate in gpgpu_sim class
   //if (clock_mask & MEMUNIT)
-  //  memunit_cycle();
+  memunit_cycle();
   
   if (clock_mask & CORE) {
     // shader core loading (pop from ICNT into core) follows CORE clock
