@@ -1138,7 +1138,7 @@ class warp_inst_t : public inst_t {
   const mem_access_t &accessq_back() { return m_accessq.back(); }
   void accessq_pop_back() { m_accessq.pop_back(); }
   void accessq_pop_front() { m_accessq.pop_front(); }
-  void accessq_push_back(mem_access_t *p) {m_accessq.push_back(p); }
+  voud accessq_push_back(mem_access_t *p) { m_accessq.push_back(p);}
   mem_access_t &accessq_front() { return m_accessq.front(); }
   bool dispatch_delay() {
     if (cycles > 0) cycles--;

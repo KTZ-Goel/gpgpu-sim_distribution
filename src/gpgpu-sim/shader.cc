@@ -2571,7 +2571,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
             if(!m_cu_core_queue.empty())
             {
               mem_fetch *mf = m_cu_core_queue.front();
-              inst.accessq_push_back(mf->get_mem_access());
+              inst.accessq_push_back( &(mf->get_mem_access()) );
               m_cu_core_queue.pop_front();
             }
           }
