@@ -1966,7 +1966,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   
   if( !inst.accessq_empty() ) {
     const mem_access_t &access = inst.accessq_front();
-    std::cout<<"GPU Cycle: The list is not empty"<<std::endl
+    std::cout<<"GPU Cycle: The list is not empty"<<std::endl;
     bool bypassL1D = false;
     if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
       bypassL1D = true;
