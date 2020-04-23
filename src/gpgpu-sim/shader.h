@@ -102,6 +102,7 @@ class shd_warp_t {
       : m_shader(shader), m_warp_size(warp_size) {
     m_stores_outstanding = 0;
     m_inst_in_pipeline = 0;
+    m_managed_access_outstanding = 0
     reset();
   }
   void reset() {
