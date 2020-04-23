@@ -1693,7 +1693,7 @@ void gpgpu_sim::memunit_cycle()
     {
       mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
       SIMTCluster->pop_cu_gmmu_queue();
-      getSIMTCluster((*iter)->simtClusterID)->push_gmmu_cu_queue(mf);
+      SIMTCluster->push_gmmu_cu_queue(mf);
     }
   }
 
