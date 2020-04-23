@@ -1060,7 +1060,7 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
 	context->get_device()->get_gpgpu()->memcpy_to_gpu((size_t)gpuMemPtr, (void *)cpuMemPtr, size);
 
   // Set All Pages as Managed 
-  context->get_device()->get_gpgpu()->set_pages_managed( (size_t)gpuMemPtr, size);
+  //context->get_device()->get_gpgpu()->set_pages_managed( (size_t)gpuMemPtr, size);
 	//return cpu memory pointer to the user code 
 	//such that cpu side code can access the memory
 	*devPtr = cpuMemPtr;
