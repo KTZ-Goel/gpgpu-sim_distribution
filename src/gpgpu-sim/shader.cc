@@ -4398,26 +4398,28 @@ void simt_core_cluster::icnt_cycle() {
     }
   }
 
-  
-  for(std::list<latency_elem_t>::iterator iter = latency_queue.begin();
-			  iter != latency_queue.end(); iter++) 
-   {
-    mem_fetch* mf = (*iter).mf;
-    if((*iter).ready_cycle >= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
+  if(!latency_queue.empty()) {
+    for(std::list<latency_elem_t>::iterator iter = latency_queue.begin();
+          iter != latency_queue.end(); iter++) 
     {
-      // Instruction is ready to be serviced
-      // Validate pages along the way
-      std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-      std::list<mem_addr_t>::iterator iter2;
-      for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
+      
+      mem_fetch* mf = (*iter).mf;
+      if((*iter).ready_cycle >= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
       {
-          m_gpu->get_global_memory()->validate_page(*iter2);
-      }
+        // Instruction is ready to be serviced
+        // Validate pages along the way
+        std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+        std::list<mem_addr_t>::iterator iter2;
+        for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
+        {
+            m_gpu->get_global_memory()->validate_page(*iter2);
+        }
 
-      // The request is serviced.. Feed the mf to the upwards queue
-      //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
-      push_gmmu_cu_queue(mf);
-      latency_queue.erase(iter);
+        // The request is serviced.. Feed the mf to the upwards queue
+        //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
+        push_gmmu_cu_queue(mf);
+        latency_queue.erase(iter);
+      }
     }
   }
 
