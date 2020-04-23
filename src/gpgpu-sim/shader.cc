@@ -1966,7 +1966,8 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
                              mem_stage_access_type &access_type) {
   if ( m_cu_core_queue.empty() ) 
   {
-    if (inst.empty() || ((inst.space.get_type() != global_space) &&
+    if (inst.empty() || inst.accessq_empty() ||
+                        ((inst.space.get_type() != global_space) &&
                         (inst.space.get_type() != local_space) &&
                         (inst.space.get_type() != param_space_local)))
       return true;
@@ -2538,7 +2539,7 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
-    std::cout<<"\nNothing there! inst.empty - accessq_ - active_count"<<inst.empty()<<" || "<< inst.accessq_empty() << " || " <<inst.active_count();
+    //std::cout<<"\nNothing there! inst.empty - accessq_ - active_count"<<inst.empty()<<" || "<< inst.accessq_empty() << " || " <<inst.active_count();
       return true;
   }
 
