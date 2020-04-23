@@ -1685,7 +1685,7 @@ void gpgpu_sim::issue_block2core() {
 
 void gpgpu_sim::memunit_cycle()
 {
-  simt_core_cluster* SIMTCluster
+  simt_core_cluster* SIMTCluster;
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);    
