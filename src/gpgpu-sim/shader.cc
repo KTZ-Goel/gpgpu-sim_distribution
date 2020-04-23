@@ -4403,6 +4403,7 @@ void simt_core_cluster::icnt_cycle() {
       //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
       push_gmmu_cu_queue(mf);
       latency_queue.remove(*iter);
+      delete (*iter);
     }
   }
 
@@ -4412,6 +4413,7 @@ void simt_core_cluster::icnt_cycle() {
       mem_fetch* mf = front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
       pop_cu_gmmu_queue();
       latency_elem_t *p_t;
+      p_t = new latency_elem_t;
       p_t->ready_cycle =  m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle + DEFUALT_LATENCY;
       p_t->mf = mf;
       latency_queue.push_back(p_t);
