@@ -2542,11 +2542,6 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
   mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_back().get_addr());
 
-
-  if((inst.accessq_back().get_type() == GLOBAL_ACC_R) || (inst.accessq_back().get_type()== GLOBAL_ACC_W)){
-    std::cout<<"\n Is a Gloabl access";
-  }
-
   if (!m_gpu->get_global_memory()->is_page_managed( 
                                                    inst.accessq_back().get_addr(), 
                                                    inst.accessq_back().get_size() 
@@ -4374,7 +4369,7 @@ void simt_core_cluster::icnt_cycle() {
           m_core[i]->pop_core_cu_queue();
 
 
-          /*Testing code** Kshitiz
+          //Testing code** Kshitiz
           std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
           std::list<mem_addr_t>::iterator iter;
           for( iter = page_list.begin(); iter != page_list.end(); iter++)
@@ -4384,7 +4379,7 @@ void simt_core_cluster::icnt_cycle() {
           m_cu_gmmu_queue.pop_front();
           m_gmmu_cu_queue.push_back(mf);
 
-          */
+          
        }
     }
 
