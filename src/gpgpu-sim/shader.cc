@@ -2545,7 +2545,6 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
   if((inst.accessq_back().get_type() == GLOBAL_ACC_R) || (inst.accessq_back().get_type()== GLOBAL_ACC_W)){
     std::cout<<"\n Is a Gloabl access";
-    return true;
   }
 
   if (!m_gpu->get_global_memory()->is_page_managed( 
