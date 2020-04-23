@@ -1,0 +1,1110 @@
+diff --git a/.vscode/settings.json b/.vscode/settings.json
+index 90628df..855c058 100644
+--- a/.vscode/settings.json
++++ b/.vscode/settings.json
+@@ -50,6 +50,7 @@
+         "streambuf": "cpp",
+         "cfenv": "cpp",
+         "cinttypes": "cpp",
+-        "typeinfo": "cpp"
++        "typeinfo": "cpp",
++        "*.tup": "cpp"
+     }
+ }
+\ No newline at end of file
+diff --git a/Game Plan 101.txt b/Game Plan 101.txt
+new file mode 100644
+index 0000000..4572c54
+--- /dev/null
++++ b/Game Plan 101.txt	
+@@ -0,0 +1,44 @@
++Simply Optmistic changes: 
++
++0. Create data structure where gpu address is mapped to its corresponding page data structure, (this should be done at cudaMallocManaged) : Here, gpu address 
++   and the size will be used to fill corresponding pages and its page related data structure.  
++    De Dana DONE
++
++1. We have to make two Queues: -> One from CU To GMMU  and One from GMMU to CU, inspired by Ganguly (Dada).  
++
++2. In Shader.cc: -> Create an function, (kind of like access_cycle): Get the page Id from the input address and get whether 
++it is managed or not. If not valid (then page fault), push the instruction to cluster units to gmmu queue then delete the instruction from the instruction queue (accessq_pop).
++  
++   - 2.1 : Make pages managed in cudaMallocManaged and valid in cUDAMemPrefetchAsync: DONE (MALLOC MANAGED PART)
++
++3. make changes in Shader.cc/memory_cycle function: 
++   >>  Add an else condition if inst.access_queue is empty, remove the assert.
++   >>  If empty (else part), pop the instruction from gmmu to cluster unit queue, and check if any instrcution available.  
++   >>  If available, then do the same things that has been done, except for this instruction that is popped. 
++    
++*****************
++cu_gmmu_queue -> for cluster unit to memory unit for gpu
++    handles request R/W access requests for Core Clusters and sends to gmmu queue
++gmmu_cu_queue -> for gpu memory unit to cluster units
++    handles all fetched accesses over pcie to complete the requests
++
++ldst_unit :: mcore[]->c_cu_queue
++    handles access requests from cores to cluster units
++ldst_unit :: mcore[]->cu_c_queue
++    handles fecthed requests back to cores
++******************
++DONE
++
++4. Make sure to write some algo, where we take from cores(c_cu and cu_c) to a Cluster Unit queues(cu_gmmu and gmmu_cu) and visa versa.   DONE
++
++5. Make you own cycle function: GMMU_CYLE : 
++    check whether there is any request in CU_GMMU queue,
++        if yes, then check what type of latency it is.
++            if its a page fault then do not service it until it is resolved to pcie read
++                once the latency is resolved push the command to gmmu_cu queue, and then pop it from cu_gmmu queue.
++
++    5.1. first compute all the page faults 
++
++
++Wildly Optimistic Future : 
++    Prefetching can be added. 
+\ No newline at end of file
+diff --git a/libcuda/cuda_runtime_api.cc b/libcuda/cuda_runtime_api.cc
+index 839cc47..8b59754 100644
+--- a/libcuda/cuda_runtime_api.cc
++++ b/libcuda/cuda_runtime_api.cc
+@@ -143,7 +143,7 @@
+ #include "../src/gpgpusim_entrypoint.h"
+ #include "../src/stream_manager.h"
+ #include "../src/abstract_hardware_model.h"
+-
++#include "../src/cuda-sim/memory.h"
+ #include <pthread.h>
+ #include <semaphore.h>
+ 
+@@ -992,8 +992,7 @@ cudaError_t cudaLaunchInternal(const char *hostFun,
+   gpgpu_t *gpu = context->get_device()->get_gpgpu();
+   checkpoint *g_checkpoint;
+   g_checkpoint = new checkpoint();
+-  class memory_space *global_mem;
+-  global_mem = gpu->get_global_memory();
++  class memory_space* global_mem = gpu->get_global_memory();
+ 
+   if (gpu->resume_option == 1 && (grid->get_uid() == gpu->resume_kernel)) {
+     char f1name[2048];
+@@ -1060,6 +1059,8 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
+ 	//so we need to copy the actual data on kernel launch 
+ 	context->get_device()->get_gpgpu()->memcpy_to_gpu((size_t)gpuMemPtr, (void *)cpuMemPtr, size);
+ 
++  // Set All Pages as Managed 
++  context->get_device()->get_gpgpu()->set_pages_managed( (size_t)gpuMemPtr, size);
+ 	//return cpu memory pointer to the user code 
+ 	//such that cpu side code can access the memory
+ 	*devPtr = cpuMemPtr;
+diff --git a/src/abstract_hardware_model.h b/src/abstract_hardware_model.h
+index 4790190..35c73d3 100644
+--- a/src/abstract_hardware_model.h
++++ b/src/abstract_hardware_model.h
+@@ -567,6 +567,8 @@ class gpgpu_t {
+   std::map<new_addr_type, struct allocation_info*>&  gpu_get_managed_allocations();
+   struct allocation_info* gpu_find_managed_allocation(new_addr_type cpuMemAddr);
+ 
++  //Method to set the MallocManaged pages as managed
++  void set_pages_managed(size_t addr, size_t size);
+ 
+   class memory_space *get_global_memory() {
+     return m_global_mem;
+@@ -1135,7 +1137,8 @@ class warp_inst_t : public inst_t {
+   unsigned accessq_count() const { return m_accessq.size(); }
+   const mem_access_t &accessq_back() { return m_accessq.back(); }
+   void accessq_pop_back() { m_accessq.pop_back(); }
+-
++  void accessq_pop_front() { m_accessq.pop_front(); }
++  mem_access_t &accessq_front() { return m_accessq.front(); }
+   bool dispatch_delay() {
+     if (cycles > 0) cycles--;
+     return cycles > 0;
+diff --git a/src/cuda-sim/cuda-sim.cc b/src/cuda-sim/cuda-sim.cc
+index 32d2fcf..0f61412 100644
+--- a/src/cuda-sim/cuda-sim.cc
++++ b/src/cuda-sim/cuda-sim.cc
+@@ -467,6 +467,10 @@ struct allocation_info* gpgpu_t::gpu_find_managed_allocation ( new_addr_type cpu
+    }
+ }
+ 
++void gpgpu_t::set_pages_managed(size_t addr, size_t count){
++    m_global_mem->set_pages_managed(addr, count);
++}
++
+ void *gpgpu_t::gpu_malloc(size_t size) {
+   unsigned long long result = m_dev_malloc;
+   if (g_debug_execution >= 3) {
+diff --git a/src/cuda-sim/memory.cc b/src/cuda-sim/memory.cc
+index 1323837..966a727 100644
+--- a/src/cuda-sim/memory.cc
++++ b/src/cuda-sim/memory.cc
+@@ -102,6 +102,23 @@ void memory_space_impl<BSIZE>::write(mem_addr_t addr, size_t length,
+   }
+ }
+ 
++// Kshitiz Added Methods for managed pages
++template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_managed(mem_addr_t addr, size_t length)
++{
++  mem_addr_t page_index   = get_page_num (addr+length-1);
++  return m_data[page_index].is_managed();
++}
++
++template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_managed( mem_addr_t addr, size_t length)
++{
++  mem_addr_t start_page = get_page_num (addr);
++  mem_addr_t end_page   = get_page_num (addr+length-1);
++  while(start_page <= end_page) {
++      m_data[start_page].set_managed();
++      start_page++;
++  }
++}
++
+ template <unsigned BSIZE>
+ void memory_space_impl<BSIZE>::read_single_block(mem_addr_t blk_idx,
+                                                  mem_addr_t addr, size_t length,
+@@ -189,6 +206,61 @@ void g_print_memory_space(memory_space *mem, const char *format = "%08x",
+   mem->print(format, fout);
+ }
+ 
++//Kshitiz added
++// get page number from a virtual address
++template<unsigned BSIZE> mem_addr_t memory_space_impl<BSIZE>::get_page_num (mem_addr_t addr) 
++{
++   return addr >> m_log2_block_size;
++}
++
++// check whether the valid flag of corresponding physical page is set or not
++template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_valid (mem_addr_t pg_index) 
++{
++   // asserts whether the physical page is allocated. 
++   // should never happen as they are allocated while memcpy.
++   assert(m_data.find(pg_index) != m_data.end()); 
++   return m_data[pg_index].is_valid();
++}
++
++// set the valid flag of corresponding physical page 
++template<unsigned BSIZE> void memory_space_impl<BSIZE>::validate_page (mem_addr_t pg_index)
++{
++   assert(m_data.find(pg_index) != m_data.end());
++   m_data[pg_index].validate_page();
++}
++
++// clear the valid flag of corresponding physical page 
++template<unsigned BSIZE> void memory_space_impl<BSIZE>::invalidate_page (mem_addr_t pg_index)
++{
++   assert(m_data.find(pg_index) != m_data.end());
++   m_data[pg_index].invalidate_page();
++}
++
++template<unsigned BSIZE> mem_addr_t memory_space_impl<BSIZE>::get_mem_addr(mem_addr_t pg_index)
++{
++  return pg_index << m_log2_block_size;
++}
++
++// a variable accessed by a memory address and the datatype size may exceed a page boundary
++// method returns list of page numbers if at all they are faulty or invalid
++template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_faulty_pages (mem_addr_t addr, size_t length)
++{
++  std::list<mem_addr_t> page_list;
++
++  mem_addr_t start_page = get_page_num (addr);
++  mem_addr_t end_page   = get_page_num (addr+length-1);
++  
++  while(start_page <= end_page) {
++      if (!is_valid(start_page)) {
++          page_list.push_back(start_page);
++      }
++      start_page++;
++  }
++
++  return page_list;
++}
++
++
+ #ifdef UNIT_TEST
+ 
+ int main(int argc, char *argv[]) {
+diff --git a/src/cuda-sim/memory.h b/src/cuda-sim/memory.h
+index b2541af..25d693a 100644
+--- a/src/cuda-sim/memory.h
++++ b/src/cuda-sim/memory.h
+@@ -101,7 +101,7 @@ class mem_storage {
+     return managed;
+   }
+ 
+-//Valid flag simulates page table like fucntion. If the page table entry not present valid =
++//Valid flag simulates page table like fucntion. If the page table entry not present valid = false
+   bool is_valid	()	{ 
+     return valid;  
+   }
+@@ -135,6 +135,21 @@ class memory_space {
+   virtual void read(mem_addr_t addr, size_t length, void *data) const = 0;
+   virtual void print(const char *format, FILE *fout) const = 0;
+   virtual void set_watch(addr_t addr, unsigned watchpoint) = 0;
++
++  // Kshitiz Added
++  // Method to find if the page is managed
++  virtual bool is_page_managed(mem_addr_t addr, size_t length) = 0;
++
++  // Method to set the page as managed
++  virtual void set_pages_managed( mem_addr_t addr, size_t length) = 0;
++
++  // Methods to check page table(m_data) and make some changes
++   virtual void	validate_page	(mem_addr_t pg_index) = 0;
++   virtual void	invalidate_page	(mem_addr_t pg_index) = 0;
++   virtual std::list<mem_addr_t>	get_faulty_pages(mem_addr_t addr, size_t length) = 0;
++   virtual mem_addr_t get_page_num (mem_addr_t addr) = 0;
++   virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
++   virtual bool is_valid (mem_addr_t pg_index) = 0;
+ };
+ 
+ template <unsigned BSIZE>
+@@ -150,14 +165,36 @@ class memory_space_impl : public memory_space {
+   virtual void print(const char *format, FILE *fout) const;
+ 
+   virtual void set_watch(addr_t addr, unsigned watchpoint);
++  
++  // Kshitiz Added
++  // Method to find if the page is managed
++  virtual bool is_page_managed(mem_addr_t addr, size_t length);
++
++  // Method to set the page as managed
++  virtual void set_pages_managed( mem_addr_t addr, size_t length);
++
++  // Methods to check page table(m_data) and make some changes
++   virtual void	validate_page	(mem_addr_t pg_index);
++   virtual void	invalidate_page	(mem_addr_t pg_index);
++   virtual std::list<mem_addr_t> get_faulty_pages(mem_addr_t addr, size_t length);
++   virtual mem_addr_t get_page_num (mem_addr_t addr);
++   virtual mem_addr_t get_mem_addr(mem_addr_t pg_index);
++   virtual bool is_valid (mem_addr_t pg_index);
+ 
+  private:
+   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
+                          void *data) const;
+   std::string m_name;
+   unsigned m_log2_block_size;
++
++  /**
++   * \brief This data structure acts as the page table in this code
++   * Memory storage object acts as a physical page
++   * mem_Addr_t used is the virtual address used to access the pages.
++   */
+   typedef mem_map<mem_addr_t, mem_storage<BSIZE> > map_t;
+   map_t m_data;
++
+   std::map<unsigned, mem_addr_t> m_watchpoints;
+ };
+ 
+diff --git a/src/gpgpu-sim/gpu-sim.cc b/src/gpgpu-sim/gpu-sim.cc
+index a6a39ab..5dba88d 100644
+--- a/src/gpgpu-sim/gpu-sim.cc
++++ b/src/gpgpu-sim/gpu-sim.cc
+@@ -90,6 +90,7 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
+ #define L2 0x02
+ #define DRAM 0x04
+ #define ICNT 0x08
++#define MEMUNIT 0x10
+ 
+ #define MEM_LATENCY_STAT_IMPL
+ 
+@@ -1680,12 +1681,40 @@ void gpgpu_sim::issue_block2core() {
+   }
+ }
+ 
++void gpgpu_sim::memunit_cycle()
++{
++  // Dummy, just pull and push
++  for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
++  {
++    if(!(getSIMTCluster(i))->empty_cu_gmmu_queue());
++    {
++      mem_fetch* mf = (getSIMTCluster(i))->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
++      (getSIMTCluster(i))->pop_cu_gmmu_queue();
++
++    // Validate pages along the way
++      list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
++      std::list<mem_addr_t>::iterator iter;
++      for( iter = page_list.begin(); iter != page_list.end(); iter++)
++      {
++        get_global_memory()->validate_page(*iter);
++      }
++
++    // The request is serviced.. Feed the mf to the upwards queue
++      (getSIMTCluster(i))->push_gmmu_cu_queue(mf);
++    }
++  }
++}
++
+ unsigned long long g_single_step =
+     0;  // set this in gdb to single step the pipeline
+ 
+ void gpgpu_sim::cycle() {
+   int clock_mask = next_clock_domain();
+-
++  
++  /// Add a cycle, and instatiate in gpgpu_sim class
++  //if (clock_mask & MEMUNIT)
++  //  memunit_cycle();
++  
+   if (clock_mask & CORE) {
+     // shader core loading (pop from ICNT into core) follows CORE clock
+     for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
+@@ -1992,4 +2021,6 @@ const shader_core_config *gpgpu_sim::getShaderCoreConfig() {
+ 
+ const memory_config *gpgpu_sim::getMemoryConfig() { return m_memory_config; }
+ 
+-simt_core_cluster *gpgpu_sim::getSIMTCluster() { return *m_cluster; }
++simt_core_cluster *gpgpu_sim::getSIMTCluster(int i) {	//changed
++  return *(m_cluster+i);
++}
+diff --git a/src/gpgpu-sim/gpu-sim.h b/src/gpgpu-sim/gpu-sim.h
+index 19fbf5d..b8553e8 100644
+--- a/src/gpgpu-sim/gpu-sim.h
++++ b/src/gpgpu-sim/gpu-sim.h
+@@ -489,6 +489,7 @@ class gpgpu_sim : public gpgpu_t {
+ 
+   void init();
+   void cycle();
++  void memunit_cycle(); // This will be memory cycle
+   bool active();
+   bool cycle_insn_cta_max_hit() {
+     return (m_config.gpu_max_cycle_opt && (gpu_tot_sim_cycle + gpu_sim_cycle) >=
+@@ -554,7 +555,7 @@ class gpgpu_sim : public gpgpu_t {
+    * Returning the cluster of of the shader core, used by the functional
+    * simulation so far
+    */
+-  simt_core_cluster *getSIMTCluster();
++  simt_core_cluster *getSIMTCluster(int i);
+ 
+   void hit_watchpoint(unsigned watchpoint_num, ptx_thread_info *thd,
+                       const ptx_instruction *pI);
+diff --git a/src/gpgpu-sim/mem_fetch.h b/src/gpgpu-sim/mem_fetch.h
+index 71d8acd..61558f0 100644
+--- a/src/gpgpu-sim/mem_fetch.h
++++ b/src/gpgpu-sim/mem_fetch.h
+@@ -96,6 +96,7 @@ class mem_fetch {
+   enum mf_type get_type() const { return m_type; }
+   bool isatomic() const;
+ 
++  mem_access_t get_mem_access() { return m_access; }
+   void set_return_timestamp(unsigned t) { m_timestamp2 = t; }
+   void set_icnt_receive_time(unsigned t) { m_icnt_receive_time = t; }
+   unsigned get_timestamp() const { return m_timestamp; }
+@@ -114,7 +115,7 @@ class mem_fetch {
+   }
+ 
+   address_type get_pc() const { return m_inst.empty() ? -1 : m_inst.pc; }
+-  const warp_inst_t &get_inst() { return m_inst; }
++  warp_inst_t &get_inst() { return m_inst; }
+   enum mem_fetch_status get_status() const { return m_status; }
+ 
+   const memory_config *get_mem_config() { return m_mem_config; }
+diff --git a/src/gpgpu-sim/shader.cc b/src/gpgpu-sim/shader.cc
+index b596c0d..0254d75 100644
+--- a/src/gpgpu-sim/shader.cc
++++ b/src/gpgpu-sim/shader.cc
+@@ -387,7 +387,7 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
+   }
+ 
+   m_ldst_unit =
+-      new ldst_unit(m_icnt, m_mem_fetch_allocator, this, &m_operand_collector,
++      new ldst_unit(gpu, m_icnt, m_mem_fetch_allocator, this, &m_operand_collector,
+                     m_scoreboard, config, mem_config, stats, shader_id, tpc_id);
+   m_fu.push_back(m_ldst_unit);
+   m_dispatch_port.push_back(ID_OC_MEM);
+@@ -1664,6 +1664,66 @@ bool ldst_unit::shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
+   return !stall;
+ }
+ 
++mem_stage_stall_type
++ldst_unit::process_managed_cache_access( cache_t* cache,
++                                new_addr_type address,
++                                std::list<cache_event>& events,
++                                mem_fetch *mf, 
++                                enum cache_request_status status )
++{
++   mem_stage_stall_type result = NO_RC_FAIL;
++   bool write_sent = was_write_sent(events);
++   bool read_sent = was_read_sent(events);
++   if( write_sent ) 
++       m_core->inc_store_req( mf->get_inst().warp_id() );
++   if ( status == HIT ) {
++       assert( !read_sent );
++       m_core->dec_managed_access_req( mf->get_wid() );
++       m_cu_core_queue.pop_front();
++       if ( mf->get_inst().is_load()) {
++           for ( unsigned r=0; r < 4; r++) 
++               if (mf->get_inst().out[r] > 0) 
++                   m_pending_writes[ mf->get_inst().warp_id() ][mf->get_inst().out[r]]--;
++
++           bool pending_requests=false;
++           warp_inst_t &pipe_reg = mf->get_inst();
++           unsigned warp_id = mf->get_wid();
++           for( unsigned r=0; r<4; r++ ) {
++               unsigned reg_id = pipe_reg.out[r];
++               if( reg_id > 0 ) {
++                   if( m_pending_writes[warp_id].find(reg_id) != m_pending_writes[warp_id].end() ) {
++                       if ( m_pending_writes[warp_id][reg_id] > 0 ) {
++                           pending_requests=true;
++                           break;
++                       } else {
++                           // this instruction is done already
++                           m_pending_writes[warp_id].erase(reg_id);
++                       }
++                   }
++               }
++           }
++           if( !pending_requests ) {
++               m_core->warp_inst_complete(pipe_reg);
++               m_scoreboard->releaseRegisters(&pipe_reg);
++           } 
++       }
++       if( !write_sent ) 
++        delete mf;
++
++   } else if ( status == RESERVATION_FAIL ) {
++       result = COAL_STALL;
++       assert( !read_sent );
++       assert( !write_sent );
++   } else {
++       assert( status == MISS || status == HIT_RESERVED );
++       //inst.clear_active( access.get_warp_mask() ); // threads in mf writeback when mf returns
++
++       m_core->dec_managed_access_req( mf->get_wid() );
++       m_cu_core_queue.pop_front();
++   }    
++   return result;
++}
++
+ mem_stage_stall_type ldst_unit::process_cache_access(
+     cache_t *cache, new_addr_type address, warp_inst_t &inst,
+     std::list<cache_event> &events, mem_fetch *mf,
+@@ -1681,6 +1741,7 @@ mem_stage_stall_type ldst_unit::process_cache_access(
+   }
+   if (status == HIT) {
+     assert(!read_sent);
++    //inst.accessq_pop_front();
+     inst.accessq_pop_back();
+     if (inst.is_load()) {
+       for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
+@@ -1696,12 +1757,25 @@ mem_stage_stall_type ldst_unit::process_cache_access(
+     assert(status == MISS || status == HIT_RESERVED);
+     // inst.clear_active( access.get_warp_mask() ); // threads in mf writeback
+     // when mf returns
++    //inst.accessq_pop_front();
+     inst.accessq_pop_back();
+   }
+   if (!inst.accessq_empty() && result == NO_RC_FAIL) result = COAL_STALL;
+   return result;
+ }
+ 
++mem_stage_stall_type ldst_unit::process_managed_memory_access_queue( cache_t *cache )
++{
++   if( !cache->data_port_free() )
++       return DATA_PORT_STALL;
++
++   //const mem_access_t &access = inst.accessq_back();
++   mem_fetch *mf = m_cu_core_queue.front();
++   std::list<cache_event> events;
++   enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
++   return process_managed_cache_access( cache, mf->get_addr(), events, mf, status );
++}
++
+ mem_stage_stall_type ldst_unit::process_memory_access_queue(cache_t *cache,
+                                                             warp_inst_t &inst) {
+   mem_stage_stall_type result = NO_RC_FAIL;
+@@ -1711,6 +1785,7 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue(cache_t *cache,
+ 
+   // const mem_access_t &access = inst.accessq_back();
+   mem_fetch *mf = m_mf_allocator->alloc(
++      //inst, inst.accessq_front(),
+       inst, inst.accessq_back(),
+       m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
+   std::list<cache_event> events;
+@@ -1733,7 +1808,7 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
+       if (inst.accessq_empty()) return result;
+ 
+       mem_fetch *mf =
+-          m_mf_allocator->alloc(inst, inst.accessq_back(),
++          m_mf_allocator->alloc(inst, inst.accessq_front(),
+                                 m_core->get_gpu()->gpu_sim_cycle +
+                                     m_core->get_gpu()->gpu_tot_sim_cycle);
+       unsigned bank_id = m_config->m_L1D_config.set_bank(mf->get_addr());
+@@ -1753,6 +1828,7 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
+             m_core->inc_store_req(inst.warp_id());
+         }
+ 
++        //inst.accessq_pop_front();
+         inst.accessq_pop_back();
+       } else {
+         result = BK_CONF;
+@@ -1766,7 +1842,8 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
+     return result;
+   } else {
+     mem_fetch *mf =
+-        m_mf_allocator->alloc(inst, inst.accessq_back(),
++        //m_mf_allocator->alloc(inst, inst.accessq_front(),
++         m_mf_allocator->alloc(inst, inst.accessq_back(),
+                               m_core->get_gpu()->gpu_sim_cycle +
+                                   m_core->get_gpu()->gpu_tot_sim_cycle);
+     std::list<cache_event> events;
+@@ -1880,61 +1957,125 @@ bool ldst_unit::texture_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
+ bool ldst_unit::memory_cycle(warp_inst_t &inst,
+                              mem_stage_stall_type &stall_reason,
+                              mem_stage_access_type &access_type) {
+-  if (inst.empty() || ((inst.space.get_type() != global_space) &&
+-                       (inst.space.get_type() != local_space) &&
+-                       (inst.space.get_type() != param_space_local)))
+-    return true;
+-  if (inst.active_count() == 0) return true;
+-  assert(!inst.accessq_empty());
+-  mem_stage_stall_type stall_cond = NO_RC_FAIL;
+-  const mem_access_t &access = inst.accessq_back();
+-
+-  bool bypassL1D = false;
+-  if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
+-    bypassL1D = true;
+-  } else if (inst.space.is_global()) {  // global memory access
+-    // skip L1 cache if the option is enabled
+-    if (m_core->get_config()->gmem_skip_L1D && (CACHE_L1 != inst.cache_op))
++  //if ( m_cu_core_queue.empty() ) 
++  //{
++    if (inst.empty() || ((inst.space.get_type() != global_space) &&
++                        (inst.space.get_type() != local_space) &&
++                        (inst.space.get_type() != param_space_local)))
++      return true;
++    if (inst.active_count() == 0) return true;
++  //}
++  assert(!inst.accessq_empty());    
++  mem_stage_stall_type stall_cond = NO_RC_FAIL; 
++  
++  
++  //if( !inst.accessq_empty() ) {
++    //const mem_access_t &access = inst.accessq_front();
++    const mem_access_t &access = inst.accessq_back();
++
++    bool bypassL1D = false;
++    if (CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL)) {
+       bypassL1D = true;
+-  }
+-  if (bypassL1D) {
+-    // bypass L1 cache
+-    unsigned control_size =
+-        inst.is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
+-    unsigned size = access.get_size() + control_size;
+-    // printf("Interconnect:Addr: %x, size=%d\n",access.get_addr(),size);
+-    if (m_icnt->full(size, inst.is_store() || inst.isatomic())) {
+-      stall_cond = ICNT_RC_FAIL;
++    } else if (inst.space.is_global()) {  // global memory access
++      // skip L1 cache if the option is enabled
++      if (m_core->get_config()->gmem_skip_L1D && (CACHE_L1 != inst.cache_op))
++        bypassL1D = true;
++    }
++    if (bypassL1D) {
++      // bypass L1 cache
++      unsigned control_size =
++          inst.is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
++      unsigned size = access.get_size() + control_size;
++      // printf("Interconnect:Addr: %x, size=%d\n",access.get_addr(),size);
++      if (m_icnt->full(size, inst.is_store() || inst.isatomic())) {
++        stall_cond = ICNT_RC_FAIL;
++      } else {
++        mem_fetch *mf =
++            m_mf_allocator->alloc(inst, access,
++                                  m_core->get_gpu()->gpu_sim_cycle +
++                                      m_core->get_gpu()->gpu_tot_sim_cycle);
++        m_icnt->push(mf);
++        //inst.accessq_pop_front();
++        inst.accessq_pop_back();
++        // inst.clear_active( access.get_warp_mask() );
++        if (inst.is_load()) {
++          for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
++            if (inst.out[r] > 0)
++              assert(m_pending_writes[inst.warp_id()][inst.out[r]] > 0);
++        } else if (inst.is_store())
++          m_core->inc_store_req(inst.warp_id());
++      }
+     } else {
+-      mem_fetch *mf =
+-          m_mf_allocator->alloc(inst, access,
+-                                m_core->get_gpu()->gpu_sim_cycle +
+-                                    m_core->get_gpu()->gpu_tot_sim_cycle);
+-      m_icnt->push(mf);
+-      inst.accessq_pop_back();
+-      // inst.clear_active( access.get_warp_mask() );
+-      if (inst.is_load()) {
+-        for (unsigned r = 0; r < MAX_OUTPUT_VALUES; r++)
+-          if (inst.out[r] > 0)
+-            assert(m_pending_writes[inst.warp_id()][inst.out[r]] > 0);
+-      } else if (inst.is_store())
+-        m_core->inc_store_req(inst.warp_id());
++      assert(CACHE_UNDEFINED != inst.cache_op);
++      stall_cond = process_memory_access_queue_l1cache(m_L1D, inst);
++    }
++
++    if (!inst.accessq_empty() && stall_cond == NO_RC_FAIL)
++      stall_cond = COAL_STALL;
++    if (stall_cond != NO_RC_FAIL) {
++      stall_reason = stall_cond;
++      bool iswrite = inst.is_store();
++      if (inst.space.is_local())
++        access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
++      else
++        access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
++    }
++    return inst.accessq_empty();
++    
++  //}  
++  /*else
++  {
++    mem_fetch *mf = m_cu_core_queue.front();
++    bool bypassL1D = false; 
++    if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
++        bypassL1D = true; 
++    } 
++    else if (mf->get_inst().space.is_global()) { // global memory access 
++        // skip L1 cache if the option is enabled
++        if (m_core->get_config()->gmem_skip_L1D) 
++            bypassL1D = true; 
++    }
++
++    if( bypassL1D ) 
++    {
++      // bypass L1 cache
++      unsigned control_size = mf->get_inst().is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
++      unsigned size = mf->get_mem_access().get_size() + control_size;
++      if( m_icnt->full(size, mf->get_inst().is_store() || mf->get_inst().isatomic()) ) {
++          stall_cond = ICNT_RC_FAIL;
++      } 
++      else 
++      {
++          m_icnt->push(mf);
++          m_core->dec_managed_access_req( mf->get_wid() );
++          m_cu_core_queue.pop_front();
++          if( mf->get_inst().is_load() ) 
++          { 
++            for( unsigned r=0; r < 4; r++) 
++                if(mf->get_inst().out[r] > 0) 
++                    assert( m_pending_writes[mf->get_inst().warp_id()][mf->get_inst().out[r]] > 0 );
++          } 
++          else if( mf->get_inst().is_store() ) 
++            m_core->inc_store_req( mf->get_inst().warp_id() );
++      }
++    } 
++    else 
++    {
++      assert( CACHE_UNDEFINED != mf->get_inst().cache_op );
++      stall_cond = process_managed_memory_access_queue(m_L1D);   // TO_BE_ADDED
++    }
++
++    if (stall_cond == NO_RC_FAIL) 
++    {
++      // CURRENTLY UNDefined
+     }
+-  } else {
+-    assert(CACHE_UNDEFINED != inst.cache_op);
+-    stall_cond = process_memory_access_queue_l1cache(m_L1D, inst);
+-  }
+-  if (!inst.accessq_empty() && stall_cond == NO_RC_FAIL)
+-    stall_cond = COAL_STALL;
+-  if (stall_cond != NO_RC_FAIL) {
+-    stall_reason = stall_cond;
+-    bool iswrite = inst.is_store();
+-    if (inst.space.is_local())
+-      access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
+     else
+-      access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
+-  }
+-  return inst.accessq_empty();
++    {
++      // Currently Undefined
++    }
++
++    return true; 
++  }*/
+ }
+ 
+ bool ldst_unit::response_buffer_full() const {
+@@ -1948,6 +2089,12 @@ void ldst_unit::fill(mem_fetch *mf) {
+   m_response_fifo.push_back(mf);
+ }
+ 
++void ldst_unit::fill_mem_access( mem_fetch *mf) 
++{
++  mf->set_status(MEM_FETCH_INITIALIZED, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
++  m_cu_core_queue.push_back(mf);
++}
++
+ void ldst_unit::flush() {
+   // Flush L1D cache
+   m_L1D->flush();
+@@ -2145,7 +2292,8 @@ void pipelined_simd_unit::issue(register_set &source_reg) {
+     }
+ */
+ 
+-void ldst_unit::init(mem_fetch_interface *icnt,
++void ldst_unit::init(class gpgpu_sim* gpu,
++                     mem_fetch_interface *icnt,
+                      shader_core_mem_fetch_allocator *mf_allocator,
+                      shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+                      Scoreboard *scoreboard, const shader_core_config *config,
+@@ -2158,6 +2306,7 @@ void ldst_unit::init(mem_fetch_interface *icnt,
+   m_operand_collector = operand_collector;
+   m_scoreboard = scoreboard;
+   m_stats = stats;
++  m_gpu = gpu;  // added Rishabh
+   m_sid = sid;
+   m_tpc = tpc;
+ #define STRSIZE 1024
+@@ -2181,7 +2330,8 @@ void ldst_unit::init(mem_fetch_interface *icnt,
+   m_last_inst_gpu_tot_sim_cycle = 0;
+ }
+ 
+-ldst_unit::ldst_unit(mem_fetch_interface *icnt,
++ldst_unit::ldst_unit(class gpgpu_sim* gpu,
++                     mem_fetch_interface *icnt,
+                      shader_core_mem_fetch_allocator *mf_allocator,
+                      shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+                      Scoreboard *scoreboard, const shader_core_config *config,
+@@ -2190,7 +2340,7 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
+     : pipelined_simd_unit(NULL, config, config->smem_latency, core),
+       m_next_wb(config) {
+   assert(config->smem_latency > 1);
+-  init(icnt, mf_allocator, core, operand_collector, scoreboard, config,
++  init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
+        mem_config, stats, sid, tpc);
+   if (!m_config->m_L1D_config.disabled()) {
+     char L1D_name[STRSIZE];
+@@ -2209,7 +2359,8 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
+   m_name = "MEM ";
+ }
+ 
+-ldst_unit::ldst_unit(mem_fetch_interface *icnt,
++ldst_unit::ldst_unit(class gpgpu_sim* gpu,
++                     mem_fetch_interface *icnt,
+                      shader_core_mem_fetch_allocator *mf_allocator,
+                      shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+                      Scoreboard *scoreboard, const shader_core_config *config,
+@@ -2218,7 +2369,7 @@ ldst_unit::ldst_unit(mem_fetch_interface *icnt,
+     : pipelined_simd_unit(NULL, config, 3, core),
+       m_L1D(new_l1d_cache),
+       m_next_wb(config) {
+-  init(icnt, mf_allocator, core, operand_collector, scoreboard, config,
++  init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
+        mem_config, stats, sid, tpc);
+ }
+ 
+@@ -2374,6 +2525,71 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
+    pipelined_simd_unit::issue(reg_set);
+ }
+ */
++bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
++{
++  if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
++      return true;
++  }
++
++  mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_front().get_addr());
++
++  if (m_gpu->get_global_memory()->is_page_managed( 
++                                                   inst.accessq_front().get_addr(), 
++                                                   inst.accessq_front().get_size() 
++                                                  ) ) 
++  {  // Check if page is managed       
++      if((inst.accessq_front().get_type() == GLOBAL_ACC_R) || 
++       (inst.accessq_front().get_type() == GLOBAL_ACC_W)){  // TBD
++        
++        if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
++          // Page was found in TLB/Page table and doesn't incur a page fault
++          return true; 
++        }
++        else{
++          
++          mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_front(),
++                                m_core->get_gpu()->gpu_sim_cycle +
++                                    m_core->get_gpu()->gpu_tot_sim_cycle);
++
++          // The page is not present in the page fault... Add to the cu_gmmu queue to incur page fault latency
++          m_core_cu_queue.push_back(mf);
++          
++          // Debug, assume, that the function is processed and returned, lets check here
++         
++          std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
++          std::list<mem_addr_t>::iterator iter;
++          for( iter = page_list.begin(); iter != page_list.end(); iter++)
++          {
++              m_gpu->get_global_memory()->validate_page(*iter);
++          }
++          pop_core_cu_queue();
++          m_cu_core_queue.push_back(mf);
++
++          // Debug end
++          
++          
++
++          // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
++          inst.accessq_pop_front();
++
++          m_core->inc_managed_access_req( mf->get_wid());
++          
++          if( !inst.accessq_empty() ) {
++                stall_reason = COAL_STALL;
++                access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
++          }
++          
++          // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
++          return inst.accessq_empty();
++        }
++      } else {  // if no managed access left then accesq_cycle is done
++        return true;
++      }
++  } else {return true;}
++
++}
++
++
+ void ldst_unit::cycle() {
+   writeback();
+   m_operand_collector->step();
+@@ -2441,11 +2657,15 @@ void ldst_unit::cycle() {
+     m_L1D->cycle();
+     if (m_config->m_L1D_config.l1_latency > 0) L1_latency_queue_cycle();
+   }
+-
++  
+   warp_inst_t &pipe_reg = *m_dispatch_reg;
+   enum mem_stage_stall_type rc_fail = NO_RC_FAIL;
+   mem_stage_access_type type;
+   bool done = true;
++
++  // process the instruction's memory access queue for Page Table, and PCI-E
++  //done = accessq_cycle(pipe_reg, rc_fail, type);
++
+   done &= shared_cycle(pipe_reg, rc_fail, type);
+   done &= constant_cycle(pipe_reg, rc_fail, type);
+   done &= texture_cycle(pipe_reg, rc_fail, type);
+@@ -3514,6 +3734,11 @@ void shader_core_ctx::broadcast_barrier_reduction(unsigned cta_id,
+   }
+ }
+ 
++void shader_core_ctx::accept_access_response( mem_fetch *mf ) 
++{
++  m_ldst_unit->fill_mem_access(mf);
++}
++
+ bool shader_core_ctx::fetch_unit_response_buffer_full() const { return false; }
+ 
+ void shader_core_ctx::accept_fetch_response(mem_fetch *mf) {
+@@ -3572,7 +3797,7 @@ bool shd_warp_t::functional_done() const {
+ }
+ 
+ bool shd_warp_t::hardware_done() const {
+-  return functional_done() && stores_done() && !inst_in_pipeline();
++  return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
+ }
+ 
+ bool shd_warp_t::waiting() {
+@@ -4112,6 +4337,24 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
+ }
+ 
+ void simt_core_cluster::icnt_cycle() {
++
++    // pop from upward queue (GMMU to CU) of cluster and push it to the one in core (SM/CU)
++    /*if ( !m_gmmu_cu_queue.empty() ) {
++      mem_fetch *mf = m_gmmu_cu_queue.front();
++      unsigned cid = m_config->sid_to_cid(mf->get_sid());
++      m_gmmu_cu_queue.pop_front();
++      m_core[cid]->accept_access_response(mf);
++    } 
++    
++    // pop it from the downward queue (CU to GMMU) of the core (SM/CU) and push it to the one in cluster (TPC)
++    for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
++       if (!m_core[i]->empty_core_cu_queue()){
++          mem_fetch *mf = m_core[i]->front_core_cu_queue();
++          m_cu_gmmu_queue.push_front(mf);
++          m_core[i]->pop_core_cu_queue();
++       }
++    }*/
++
+   if (!m_response_fifo.empty()) {
+     mem_fetch *mf = m_response_fifo.front();
+     unsigned cid = m_config->sid_to_cid(mf->get_sid());
+diff --git a/src/gpgpu-sim/shader.h b/src/gpgpu-sim/shader.h
+index 1af35cf..1e812b5 100644
+--- a/src/gpgpu-sim/shader.h
++++ b/src/gpgpu-sim/shader.h
+@@ -214,6 +214,17 @@ class shd_warp_t {
+     m_stores_outstanding--;
+   }
+ 
++  // Kshitiz Added
++  bool managed_access_done() const { return m_managed_access_outstanding == 0;}
++  void inc_managed_access_req() { 
++    m_managed_access_outstanding++;
++  }
++  void dec_managed_access_req()
++  {
++    assert( m_managed_access_outstanding > 0 );
++    m_managed_access_outstanding--;
++  }
++
+   unsigned num_inst_in_buffer() const {
+     unsigned count = 0;
+     for (unsigned i = 0; i < IBUFFER_SIZE; i++) {
+@@ -274,6 +285,7 @@ class shd_warp_t {
+ 
+   unsigned m_stores_outstanding;  // number of store requests sent but not yet
+                                   // acknowledged
++  unsigned m_managed_access_outstanding;  // number of managed accesses raised but not yet acknowledged
+   unsigned m_inst_in_pipeline;
+ 
+   // Jin: cdp support
+@@ -1218,7 +1230,8 @@ class cache_t;
+ 
+ class ldst_unit : public pipelined_simd_unit {
+  public:
+-  ldst_unit(mem_fetch_interface *icnt,
++  ldst_unit(class gpgpu_sim *gpu,
++            mem_fetch_interface *icnt,
+             shader_core_mem_fetch_allocator *mf_allocator,
+             shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+             Scoreboard *scoreboard, const shader_core_config *config,
+@@ -1230,10 +1243,23 @@ class ldst_unit : public pipelined_simd_unit {
+   virtual void cycle();
+ 
+   void fill(mem_fetch *mf);
++  // function to fill the gmmu to cu queue 
++  // from the cluster to load/store unit
++  void fill_mem_access( mem_fetch *mf );
++
+   void flush();
+   void invalidate();
+   void writeback();
+ 
++  // methods to be called by the clusters
++  // to access the queues (CU to GMMU)
++  bool empty_core_cu_queue() {return m_core_cu_queue.empty();}
++  mem_fetch* front_core_cu_queue() {return m_core_cu_queue.front();}
++  void pop_core_cu_queue() {m_core_cu_queue.pop_front();}
++
++  // method to fill the upward queue (GMMU to CU) by GMMU upon completion of PCI-E transfer
++  void push_core_cu_queue(mem_fetch *mf) { m_core_cu_queue.push_back(mf); }
++
+   // accessors
+   virtual unsigned clock_multiplier() const;
+ 
+@@ -1271,13 +1297,15 @@ class ldst_unit : public pipelined_simd_unit {
+   void get_L1T_sub_stats(struct cache_sub_stats &css) const;
+ 
+  protected:
+-  ldst_unit(mem_fetch_interface *icnt,
++  ldst_unit(class gpgpu_sim* gpu,
++            mem_fetch_interface *icnt,
+             shader_core_mem_fetch_allocator *mf_allocator,
+             shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+             Scoreboard *scoreboard, const shader_core_config *config,
+             const memory_config *mem_config, shader_core_stats *stats,
+             unsigned sid, unsigned tpc, l1_cache *new_l1d_cache);
+-  void init(mem_fetch_interface *icnt,
++  void init(class gpgpu_sim* gpu,
++            mem_fetch_interface *icnt,
+             shader_core_mem_fetch_allocator *mf_allocator,
+             shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+             Scoreboard *scoreboard, const shader_core_config *config,
+@@ -1285,6 +1313,8 @@ class ldst_unit : public pipelined_simd_unit {
+             unsigned sid, unsigned tpc);
+ 
+  protected:
++  bool accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail,
++                    mem_stage_access_type &fail_type);
+   bool shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
+                     mem_stage_access_type &fail_type);
+   bool constant_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
+@@ -1303,6 +1333,11 @@ class ldst_unit : public pipelined_simd_unit {
+   mem_stage_stall_type process_memory_access_queue_l1cache(l1_cache *cache,
+                                                            warp_inst_t &inst);
+ 
++  virtual mem_stage_stall_type process_managed_cache_access( 
++      cache_t* cache, new_addr_type address, std::list<cache_event>& events,
++      mem_fetch *mf, enum cache_request_status status );
++  mem_stage_stall_type process_managed_memory_access_queue( cache_t *cache );
++
+   const memory_config *m_memory_config;
+   class mem_fetch_interface *m_icnt;
+   shader_core_mem_fetch_allocator *m_mf_allocator;
+@@ -1334,6 +1369,12 @@ class ldst_unit : public pipelined_simd_unit {
+   unsigned long long m_last_inst_gpu_sim_cycle;
+   unsigned long long m_last_inst_gpu_tot_sim_cycle;
+ 
++  class gpgpu_sim* m_gpu;
++
++  // Two Queues for gmmu operations
++  std::list<mem_fetch*> m_core_cu_queue;
++  std::list<mem_fetch*> m_cu_core_queue;
++
+   std::vector<std::deque<mem_fetch *>> l1_latency_queue;
+   void L1_latency_queue_cycle();
+ };
+@@ -1818,10 +1859,20 @@ class shader_core_ctx : public core_t {
+               bool reset_not_completed);
+   void issue_block2core(class kernel_info_t &kernel);
+ 
++  // Kshitiz Added
++  // Interface CU/SM and cu_gmmu queues
++  bool empty_core_cu_queue() {return m_ldst_unit->empty_core_cu_queue();}
++  mem_fetch* front_core_cu_queue() {return m_ldst_unit->front_core_cu_queue();}
++  void pop_core_cu_queue() {m_ldst_unit->pop_core_cu_queue();}
++
+   void cache_flush();
+   void cache_invalidate();
+   void accept_fetch_response(mem_fetch *mf);
+   void accept_ldst_unit_response(class mem_fetch *mf);
++  
++  // method to fill the upward queue (GMMU to CU) in load/store unit 
++  void accept_access_response( mem_fetch *mf );
++  
+   void broadcast_barrier_reduction(unsigned cta_id, unsigned bar_id,
+                                    warp_set_t warps);
+   void set_kernel(kernel_info_t *k) {
+@@ -1864,6 +1915,15 @@ class shader_core_ctx : public core_t {
+   void dec_inst_in_pipeline(unsigned warp_id) {
+     m_warp[warp_id].dec_inst_in_pipeline();
+   }  // also used in writeback()
++  
++  // Kshitiz Added for handling managed accesses
++  void inc_managed_access_req( unsigned warp_id) { 
++    m_warp[warp_id].inc_managed_access_req();
++  }
++  void dec_managed_access_req( unsigned warp_id) { 
++    m_warp[warp_id].dec_managed_access_req();
++  }
++    
+   void store_ack(class mem_fetch *mf);
+   bool warp_waiting_at_mem_barrier(unsigned warp_id);
+   void set_max_cta(const kernel_info_t &kernel);
+@@ -2195,6 +2255,15 @@ class simt_core_cluster {
+     m_response_fifo.push_back(mf);
+   }
+ 
++  
++  // interface to be called by gmmu 
++  // to access the downward queues (CU to GMMU) in the cluster by GMMU
++  bool empty_cu_gmmu_queue() { return m_cu_gmmu_queue.empty(); }
++  mem_fetch* front_cu_gmmu_queue() { return m_cu_gmmu_queue.front(); }
++  void pop_cu_gmmu_queue() { m_cu_gmmu_queue.pop_front(); }
++
++  void push_gmmu_cu_queue(mem_fetch* mf) {m_gmmu_cu_queue.push_back(mf); }
++
+   void get_pdom_stack_top_info(unsigned sid, unsigned tid, unsigned *pc,
+                                unsigned *rpc) const;
+   unsigned max_cta(const kernel_info_t &kernel);
+@@ -2225,6 +2294,9 @@ class simt_core_cluster {
+   shader_core_stats *m_stats;
+   memory_stats_t *m_memory_stats;
+   shader_core_ctx **m_core;
++  
++  std::list<mem_fetch*> m_gmmu_cu_queue;
++  std::list<mem_fetch*> m_cu_gmmu_queue;
+ 
+   unsigned m_cta_issue_next_core;
+   std::list<unsigned> m_core_sim_order;
