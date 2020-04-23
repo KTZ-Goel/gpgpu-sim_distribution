@@ -2673,10 +2673,12 @@ void ldst_unit::cycle() {
   // process the instruction's memory access queue for Page Table, and PCI-E
   done = accessq_cycle(pipe_reg, rc_fail, type);
 
-  done &= shared_cycle(pipe_reg, rc_fail, type);
-  done &= constant_cycle(pipe_reg, rc_fail, type);
-  done &= texture_cycle(pipe_reg, rc_fail, type);
-  done &= memory_cycle(pipe_reg, rc_fail, type);
+  if(done){
+    done &= shared_cycle(pipe_reg, rc_fail, type);
+    done &= constant_cycle(pipe_reg, rc_fail, type);
+    done &= texture_cycle(pipe_reg, rc_fail, type);
+    done &= memory_cycle(pipe_reg, rc_fail, type);
+  }
   m_mem_rc = rc_fail;
 
   if (!done) {  // log stall types and return
