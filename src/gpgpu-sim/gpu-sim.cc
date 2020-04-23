@@ -1688,9 +1688,15 @@ void gpgpu_sim::memunit_cycle()
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);
+    if(SIMTCluster == NULL)
+    {
+      std::cout<<"Something weird, should print this, SIMTCluster is NULL"<<endl;
+    }
+    std::cout<<"The Queue is empty or not"<<SIMTCluster->empty_cu_gmmu_queue();
     if(!SIMTCluster->empty_cu_gmmu_queue());
     {
       mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      mf->print();
       SIMTCluster->pop_cu_gmmu_queue();
 
     // Validate pages along the way
