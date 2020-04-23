@@ -2586,7 +2586,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     
 
     // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
-    inst.accessq_pop_front();
+    inst.accessq_pop_back();
 
     m_core->inc_managed_access_req( mf->get_wid());
     
