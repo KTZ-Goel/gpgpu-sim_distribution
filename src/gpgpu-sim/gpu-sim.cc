@@ -1690,8 +1690,8 @@ void gpgpu_sim::memunit_cycle()
   for(std::list<latency_elem_t*>::iterator iter = latency_queue.begin();
 			  iter != latency_queue.end(); iter++) 
    {
-    mem_fetch* mf = iter->mf;
-    if(iter->ready_cycle >= gpu_sim_cycle + gpu_tot_sim_cycle)
+    mem_fetch* mf = iter.mf;
+    if(iter.ready_cycle >= gpu_sim_cycle + gpu_tot_sim_cycle)
     {
       // Instruction is ready to be serviced
       // Validate pages along the way
