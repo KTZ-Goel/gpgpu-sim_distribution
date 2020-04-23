@@ -4417,7 +4417,7 @@ void simt_core_cluster::icnt_cycle() {
       // The request is serviced.. Feed the mf to the upwards queue
       //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
       push_gmmu_cu_queue(mf);
-      latency_queue.remove((*iter));
+      latency_queue.remove(iter);
     }
   }
 
