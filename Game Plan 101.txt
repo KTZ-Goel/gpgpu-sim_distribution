@@ -39,6 +39,9 @@ DONE
 
     5.1. first compute all the page faults 
 
+DONE!
+
+6. Work on adding latency in gpu-sim.cc though a memunit_cycle... - in progress..
 
 Wildly Optimistic Future : 
     Prefetching can be added. 
