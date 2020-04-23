@@ -1776,8 +1776,8 @@ mem_stage_stall_type ldst_unit::process_managed_memory_access_queue( cache_t *ca
    //const mem_access_t &access = inst.accessq_back();
    mem_fetch *mf = m_cu_core_queue.front();
    std::list<cache_event> events;
-   //enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
-   enum cache_request_status status = HIT; // debug make cache hits
+   enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
+   //enum cache_request_status status = HIT; // debug make cache hits
    return process_managed_cache_access( cache, mf->get_addr(), events, mf, status );
 }
 
