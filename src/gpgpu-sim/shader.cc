@@ -4386,7 +4386,7 @@ void simt_core_cluster::icnt_cycle() {
        }
     }
 
-
+/*
   for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
     if(!empty_cu_gmmu_queue())
     {
@@ -4425,7 +4425,7 @@ void simt_core_cluster::icnt_cycle() {
       else iter++;
     }
   }
-
+*/
   if (!m_response_fifo.empty()) {
     mem_fetch *mf = m_response_fifo.front();
     unsigned cid = m_config->sid_to_cid(mf->get_sid());

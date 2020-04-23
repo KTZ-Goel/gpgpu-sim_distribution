@@ -578,17 +578,13 @@ class gpgpu_sim : public gpgpu_t {
 
   void gpgpu_debug();
    
-  // Rishabh Change, this is the structure for which we will add in
-  // the list
   struct latency_elem_t
   {
     mem_fetch *mf;
     unsigned long long ready_cycle;
     int simtClusterID;
   };
-  
-  // This the latency queue that will hold on to all the requests
-  std::list<latency_elem_t*> latency_queue;
+  std::list<latency_elem_t> latency_queue;
 
   ///// data /////
 
