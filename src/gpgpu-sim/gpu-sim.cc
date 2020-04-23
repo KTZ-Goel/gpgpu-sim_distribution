@@ -1684,45 +1684,9 @@ void gpgpu_sim::issue_block2core() {
 #define DEFUALT_LATENCY 100
 
 void gpgpu_sim::memunit_cycle()
-{
-  /*simt_core_cluster* SIMTCluster;
-  for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
-  {
-    SIMTCluster = getSIMTCluster(i);    
-    if(!(SIMTCluster->empty_cu_gmmu_queue()))
-    {
-      mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
-      // Validate pages along the way
-      list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-      std::list<mem_addr_t>::iterator iter2;
-      for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
-      {
-          get_global_memory()->validate_page(*iter2);
-      }
-      
-      SIMTCluster->pop_cu_gmmu_queue();
-      SIMTCluster->push_gmmu_cu_queue(mf);
-    }
-  }*/
-  
+{  
   std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
-  
-  for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
-  {
-    SIMTCluster = getSIMTCluster(i);    
-    if(!(SIMTCluster->empty_cu_gmmu_queue()))
-    {
-      mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
-      SIMTCluster->pop_cu_gmmu_queue();
-      latency_elem_t p_t;
-      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY;
-      p_t.mf = mf;
-      p_t.simtClusterID = i;
-      std::cout<<"\n"<<gpu_sim_cycle +  gpu_tot_sim_cycle <<"\t This memory request wil be ready at "<<p_t.ready_cycle<<std::endl;
-      latency_queue.push_back(p_t);
-    }
-  }
 
   if(!latency_queue.empty()) 
   {
@@ -1751,6 +1715,22 @@ void gpgpu_sim::memunit_cycle()
       {
         iter++;
       }
+    }
+  }
+
+  for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
+  {
+    SIMTCluster = getSIMTCluster(i);    
+    if(!(SIMTCluster->empty_cu_gmmu_queue()))
+    {
+      mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      SIMTCluster->pop_cu_gmmu_queue();
+      latency_elem_t p_t;
+      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY;
+      p_t.mf = mf;
+      p_t.simtClusterID = i;
+      std::cout<<"\n"<<gpu_sim_cycle +  gpu_tot_sim_cycle <<"\t This memory request wil be ready at "<<p_t.ready_cycle<<std::endl;
+      latency_queue.push_back(p_t);
     }
   }
 }
