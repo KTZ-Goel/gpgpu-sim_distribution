@@ -1681,7 +1681,7 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFUALT_LATENCY 10
+#define DEFUALT_LATENCY 100
 
 void gpgpu_sim::memunit_cycle()
 {
@@ -1704,7 +1704,8 @@ void gpgpu_sim::memunit_cycle()
       SIMTCluster->push_gmmu_cu_queue(mf);
     }
   }*/
-
+  
+  std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
   
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
@@ -1761,7 +1762,7 @@ void gpgpu_sim::cycle() {
   int clock_mask = next_clock_domain();
   
   /// Add a cycle, and instatiate in gpgpu_sim class
-  if (clock_mask & MEMUNIT)
+  //if (clock_mask & MEMUNIT)
     memunit_cycle();
   
   if (clock_mask & CORE) {
