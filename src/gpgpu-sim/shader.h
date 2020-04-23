@@ -2310,7 +2310,7 @@ class simt_core_cluster {
     mem_fetch *mf;
     unsigned long long ready_cycle;
   };
-  std::list<latency_elem_t> latency_queue;
+  std::list<latency_elem_t*> latency_queue;
 };
 
 class shader_memory_interface : public mem_fetch_interface {
