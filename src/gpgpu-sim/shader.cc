@@ -4352,7 +4352,7 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
     ::icnt_push(m_cluster_id, m_config->mem2device(destination), (void *)mf,
                 mf->size());
 }
-#define DEFUALT_LATENCY 3
+#define DEFUALT_LATENCY 10000
 
 void simt_core_cluster::icnt_cycle() {
 
@@ -4395,7 +4395,7 @@ void simt_core_cluster::icnt_cycle() {
       latency_elem_t p_t;
       p_t.ready_cycle =  m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle + DEFUALT_LATENCY;
       p_t.mf = mf;
-      //std::cout<<"This instruction is ready at"<<p_t.ready_cycle<<std::endl;
+      std::cout<<m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle <<"\t This instruction wil be ready at"<<p_t.ready_cycle<<std::endl;
       latency_queue.push_back(p_t);
     }
   }
