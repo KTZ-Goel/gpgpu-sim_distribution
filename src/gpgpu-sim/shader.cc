@@ -2556,7 +2556,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     return true;
   }
 
-  if((inst.accessq_back().get_type() != GLOBAL_ACC_R) || (inst.accessq_back().get_type() != GLOBAL_ACC_W)){
+  if((inst.accessq_back().get_type() != GLOBAL_ACC_R) && (inst.accessq_back().get_type() != GLOBAL_ACC_W)){
     std::cout<<"\n not a Gloabl access";
     return true;
   }
