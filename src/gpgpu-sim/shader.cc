@@ -2532,7 +2532,7 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
 
    pipelined_simd_unit::issue(reg_set);
 }
- */"
+ */
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
