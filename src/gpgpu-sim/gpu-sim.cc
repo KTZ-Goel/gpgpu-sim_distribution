@@ -1699,7 +1699,7 @@ void gpgpu_sim::memunit_cycle()
       
       if(mf == NULL)
       {
-        std::cout<<"Something weird, should print this, mf is NULL"<<endl
+        std::cout<<"\nSomething weird, should print this, mf is NULL";
       }
       SIMTCluster->pop_cu_gmmu_queue();
 
