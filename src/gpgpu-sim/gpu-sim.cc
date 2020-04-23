@@ -1685,7 +1685,19 @@ void gpgpu_sim::issue_block2core() {
 
 void gpgpu_sim::memunit_cycle()
 {
-  simt_core_cluster* SIMTCluster;
+  simt_core_cluster* SIMTCluster
+  for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
+  {
+    SIMTCluster = getSIMTCluster(i);    
+    if(!(SIMTCluster->empty_cu_gmmu_queue()))
+    {
+      mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      SIMTCluster->pop_cu_gmmu_queue();
+      getSIMTCluster((*iter)->simtClusterID)->push_gmmu_cu_queue(mf);
+    }
+  }
+
+  /*simt_core_cluster* SIMTCluster;
   
   for(std::list<latency_elem_t*>::iterator iter = latency_queue.begin();
 			  iter != latency_queue.end(); iter++) 
@@ -1722,7 +1734,7 @@ void gpgpu_sim::memunit_cycle()
       p_t->simtClusterID = i;
       latency_queue.push_back(p_t);
     }
-  }
+  }*/
 }
 
 unsigned long long g_single_step =
