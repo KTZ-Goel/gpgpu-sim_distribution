@@ -4402,8 +4402,8 @@ void simt_core_cluster::icnt_cycle() {
   for(std::list<latency_elem_t>::iterator iter = latency_queue.begin();
 			  iter != latency_queue.end(); iter++) 
    {
-    mem_fetch* mf = (iter).mf;
-    if((iter).ready_cycle >= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
+    mem_fetch* mf = (*iter).mf;
+    if((*iter).ready_cycle >= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
     {
       // Instruction is ready to be serviced
       // Validate pages along the way
@@ -4417,7 +4417,7 @@ void simt_core_cluster::icnt_cycle() {
       // The request is serviced.. Feed the mf to the upwards queue
       //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
       push_gmmu_cu_queue(mf);
-      latency_queue.remove(iter);
+      latency_queue.remove(*iter);
     }
   }
 
