@@ -2538,7 +2538,7 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
-    std::cout<<"\nNothing there!";
+    std::cout<<"\nNothing there! inst.empty - accessq_ - active_count"<<inst.empty()<<" || "<< inst.accessq_empty() << " || " <<inst.active_count();
       return true;
   }
 
