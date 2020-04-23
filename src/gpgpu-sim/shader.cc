@@ -846,6 +846,8 @@ void shader_core_ctx::fetch() {
           if (did_exit) m_warp[warp_id].set_done_exit();
           --m_active_warps;
           assert(m_active_warps >= 0);
+        } else {
+          std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;;
         }
 
         // this code fetches instructions from the i-cache or generates memory
@@ -3810,7 +3812,7 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;;
+  //std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;
   return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
     //return functional_done() && stores_done() && !inst_in_pipeline();
 }
