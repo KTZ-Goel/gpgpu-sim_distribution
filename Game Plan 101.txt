@@ -41,6 +41,9 @@ DONE
 
 DONE!
 
+
+5.2 Add latency in cluster::ICNT_cycle and pop/push into the cu_gmmu/gmmu_cu queues... -  DOne and Working
+
 6. Work on adding latency in gpu-sim.cc though a memunit_cycle... - in progress..
 
 Wildly Optimistic Future : 
