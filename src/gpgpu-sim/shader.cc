@@ -2547,12 +2547,12 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
                                                    inst.accessq_back().get_size() 
                                                   )) 
   {  // Check if page is managed, if not      
-    std::cout<<"\nPages not managed!";
+    //std::cout<<"\nPages not managed!";
     return true;
   }
 
   if((inst.accessq_back().get_type() != GLOBAL_ACC_R) && (inst.accessq_back().get_type() != GLOBAL_ACC_W)){
-    std::cout<<"\n not a Gloabl access";
+    //std::cout<<"\n not a Gloabl access";
     return true;
   }
   
@@ -2569,7 +2569,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);
-    std::cout<<"\nPushed into core to cu queue";
+    //std::cout<<"\nPushed into core to cu queue";
 
     // // Debug, assume, that the function is processed and returned, lets check here
     
@@ -3810,7 +3810,7 @@ bool shd_warp_t::functional_done() const {
 }
 
 bool shd_warp_t::hardware_done() const {
-  //std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;;
+  std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;;
   return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
     //return functional_done() && stores_done() && !inst_in_pipeline();
 }
