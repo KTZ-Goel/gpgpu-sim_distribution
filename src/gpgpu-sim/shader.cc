@@ -2559,7 +2559,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   }
   
   std::cout<<"\n Is a global access for a managed page";
-  std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(inst.accessq_back().get_addr(), inst.accessq_back().get_size())
+  std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(inst.accessq_back().get_addr(), inst.accessq_back().get_size());
   if(page_list.empty()){   // Check if all pages are valid
     // All pages was found in TLB/Page table and doesn't incur a page fault
     std::cout<<"\nFound in Page table valid";
