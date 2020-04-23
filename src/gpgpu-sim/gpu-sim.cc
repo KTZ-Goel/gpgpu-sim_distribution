@@ -1692,6 +1692,14 @@ void gpgpu_sim::memunit_cycle()
     if(!(SIMTCluster->empty_cu_gmmu_queue()))
     {
       mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      // Validate pages along the way
+      list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      std::list<mem_addr_t>::iterator iter2;
+      for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
+      {
+          get_global_memory()->validate_page(*iter2);
+      }
+      
       SIMTCluster->pop_cu_gmmu_queue();
       SIMTCluster->push_gmmu_cu_queue(mf);
     }
