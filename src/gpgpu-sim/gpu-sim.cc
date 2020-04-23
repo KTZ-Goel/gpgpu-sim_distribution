@@ -1692,7 +1692,7 @@ void gpgpu_sim::memunit_cycle()
     {
       std::cout<<"Something weird, should print this, SIMTCluster is NULL"<<endl;
     }
-    std::cout<<"The Queue is empty or not"<<SIMTCluster->empty_cu_gmmu_queue();
+    std::cout<<"\nThe Queue is empty or not"<<SIMTCluster->empty_cu_gmmu_queue();
     if(!SIMTCluster->empty_cu_gmmu_queue());
     {
       mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
