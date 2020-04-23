@@ -1663,7 +1663,7 @@ bool ldst_unit::shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
     rc_fail = NO_RC_FAIL;
   return !stall;
 }
-"
+
 mem_stage_stall_type
 ldst_unit::process_managed_cache_access( cache_t* cache,
                                 new_addr_type address,
