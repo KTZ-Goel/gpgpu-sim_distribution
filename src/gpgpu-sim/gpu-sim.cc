@@ -1681,7 +1681,7 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFUALT_LATENCY 3
+#define DEFUALT_LATENCY 0
 
 void gpgpu_sim::memunit_cycle()
 {
@@ -1732,8 +1732,8 @@ void gpgpu_sim::cycle() {
   int clock_mask = next_clock_domain();
   
   /// Add a cycle, and instatiate in gpgpu_sim class
-  // if (clock_mask & MEMUNIT)
-  //   memunit_cycle();
+  if (clock_mask & MEMUNIT)
+  memunit_cycle();
   
   if (clock_mask & CORE) {
     // shader core loading (pop from ICNT into core) follows CORE clock
