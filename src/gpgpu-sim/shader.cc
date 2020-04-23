@@ -2537,8 +2537,8 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
  */
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
-  std::cout<<"\n Accessq_Cycle called";
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
+    std::cout<<"\nNothing there!";
       return true;
   }
 
@@ -2549,11 +2549,13 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
                                                    inst.accessq_front().get_size() 
                                                   ) ) 
   {  // Check if page is managed, if not      
+    std::cout<<"\nPages not managed!";
     return true;
   }
 
   if((inst.accessq_front().get_type() != GLOBAL_ACC_R) || (inst.accessq_front().get_type() != GLOBAL_ACC_W)){
-      return true;
+    std::cout<<"\n not a Gloabl access";
+    return true;
   }
 
   if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
