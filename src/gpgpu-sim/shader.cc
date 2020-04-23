@@ -1792,7 +1792,6 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue(cache_t *cache,
 
   // const mem_access_t &access = inst.accessq_back();
   mem_fetch *mf = m_mf_allocator->alloc(
-      //inst, inst.accessq_front(),
       inst, inst.accessq_back(),
       m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
   std::list<cache_event> events;
@@ -1815,7 +1814,7 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
       if (inst.accessq_empty()) return result;
 
       mem_fetch *mf =
-          m_mf_allocator->alloc(inst, inst.accessq_front(),
+          m_mf_allocator->alloc(inst, inst.accessq_back(),
                                 m_core->get_gpu()->gpu_sim_cycle +
                                     m_core->get_gpu()->gpu_tot_sim_cycle);
       unsigned bank_id = m_config->m_L1D_config.set_bank(mf->get_addr());
@@ -1848,9 +1847,7 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
 
     return result;
   } else {
-    mem_fetch *mf =
-        //m_mf_allocator->alloc(inst, inst.accessq_front(),
-         m_mf_allocator->alloc(inst, inst.accessq_back(),
+    mem_fetch *mf = m_mf_allocator->alloc(inst, inst.accessq_back(),
                               m_core->get_gpu()->gpu_sim_cycle +
                                   m_core->get_gpu()->gpu_tot_sim_cycle);
     std::list<cache_event> events;
@@ -2066,7 +2063,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
                 if(mf->get_inst().out[r] > 0) 
                     assert( m_pending_writes[mf->get_inst().warp_id()][mf->get_inst().out[r]] > 0 );
           } 
-          else if( mf->get_inst().is_store() ) 
+          else if( mf->get_inst().is_store()) 
             m_core->inc_store_req( mf->get_inst().warp_id());
       }
     } 
@@ -2535,7 +2532,7 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
 
    pipelined_simd_unit::issue(reg_set);
 }
- */
+ */"
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
@@ -2543,18 +2540,18 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
       return true;
   }
 
-  mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_front().get_addr());
+  mem_addr_t page_no = m_gpu->get_global_memory()->get_page_num(inst.accessq_back().get_addr());
 
   if (!m_gpu->get_global_memory()->is_page_managed( 
-                                                   inst.accessq_front().get_addr(), 
-                                                   inst.accessq_front().get_size() 
-                                                  ) ) 
+                                                   inst.accessq_back().get_addr(), 
+                                                   inst.accessq_back().get_size() 
+                                                  )) 
   {  // Check if page is managed, if not      
     std::cout<<"\nPages not managed!";
     return true;
   }
 
-  if((inst.accessq_front().get_type() != GLOBAL_ACC_R) || (inst.accessq_front().get_type() != GLOBAL_ACC_W)){
+  if((inst.accessq_back().get_type() != GLOBAL_ACC_R) || (inst.accessq_back().get_type() != GLOBAL_ACC_W)){
     std::cout<<"\n not a Gloabl access";
     return true;
   }
@@ -2565,7 +2562,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     return true; 
   }
   else{
-    mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_front(),
+    mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_back(),
                           m_core->get_gpu()->gpu_sim_cycle +
                               m_core->get_gpu()->gpu_tot_sim_cycle);
 
@@ -2594,7 +2591,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     
     if( !inst.accessq_empty() ) {
           stall_reason = COAL_STALL;
-          access_type = inst.accessq_front().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
+          access_type = inst.accessq_back().get_type() == GLOBAL_ACC_W ? G_MEM_ST : G_MEM_LD;
     }
     
     // return false if access queue is not empty and we have already processed one memory access in the current load/store unit cycle
