@@ -2034,6 +2034,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   }  
   else
   {
+    std::cout<<"Else me aa gya \n";
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
     if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
