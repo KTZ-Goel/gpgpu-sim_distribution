@@ -1718,7 +1718,7 @@ void gpgpu_sim::memunit_cycle()
       p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY;
       p_t.mf = mf;
       p_t.simtClusterID = i;
-      std::cout<<m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle <<"\t This memory request wil be ready at"<<p_t.ready_cycle<<std::endl;
+      std::cout<<"\n"<<gpu_sim_cycle +  gpu_tot_sim_cycle <<"\t This memory request wil be ready at "<<p_t.ready_cycle<<std::endl;
       latency_queue.push_back(p_t);
     }
   }
@@ -1742,7 +1742,7 @@ void gpgpu_sim::memunit_cycle()
 
         // The request is serviced.. Feed the mf to the upwards queue
         //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
-        std::cout<<"Now I am servicing mem access which is ready at"<<(*iter).ready_cycle<<std::endl;
+        std::cout<<"Now I am servicing mem access which is ready at "<<(*iter).ready_cycle<<std::endl;
         getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
         latency_queue.erase(iter++);
       }
