@@ -4392,7 +4392,7 @@ void simt_core_cluster::icnt_cycle() {
     {
       // Instruction is ready to be serviced
       // Validate pages along the way
-      list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
       std::list<mem_addr_t>::iterator iter2;
       for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
       {
