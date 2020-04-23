@@ -4385,19 +4385,7 @@ void simt_core_cluster::icnt_cycle() {
           
        }
     }
-
-  for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
-    if(!empty_cu_gmmu_queue())
-    {
-      mem_fetch* mf = front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
-      pop_cu_gmmu_queue();
-      latency_elem_t p_t;
-      p_t.ready_cycle =  m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle + DEFUALT_LATENCY;
-      p_t.mf = mf;
-      latency_queue.push_back(p_t);
-    }
-  }
-
+  
   if(!latency_queue.empty()) {
     std::list<latency_elem_t>::iterator iter = latency_queue.begin();
     while(iter != latency_queue.end()) 
@@ -4419,6 +4407,19 @@ void simt_core_cluster::icnt_cycle() {
         push_gmmu_cu_queue(mf);
         latency_queue.erase(iter++);
       }
+      else iter++;
+    }
+  }
+
+  for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
+    if(!empty_cu_gmmu_queue())
+    {
+      mem_fetch* mf = front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      pop_cu_gmmu_queue();
+      latency_elem_t p_t;
+      p_t.ready_cycle =  m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle + DEFUALT_LATENCY;
+      p_t.mf = mf;
+      latency_queue.push_back(p_t);
     }
   }
 
