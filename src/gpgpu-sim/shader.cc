@@ -4370,7 +4370,7 @@ void simt_core_cluster::icnt_cycle() {
           m_core[i]->pop_core_cu_queue();
 
 
-          /*Testing code** Kshitiz
+          //Testing code** Kshitiz
           std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
           std::list<mem_addr_t>::iterator iter;
           for( iter = page_list.begin(); iter != page_list.end(); iter++)
@@ -4379,11 +4379,11 @@ void simt_core_cluster::icnt_cycle() {
           }
           m_cu_gmmu_queue.pop_front();
           m_gmmu_cu_queue.push_back(mf);
-          */
+          //
           
        }
     }
-
+/*
   for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
     if(!empty_cu_gmmu_queue())
     {
@@ -4420,7 +4420,7 @@ void simt_core_cluster::icnt_cycle() {
       delete (*iter);
     }
   }
-  
+  */
 
   if (!m_response_fifo.empty()) {
     mem_fetch *mf = m_response_fifo.front();
