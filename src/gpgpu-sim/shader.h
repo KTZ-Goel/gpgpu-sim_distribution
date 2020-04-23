@@ -2232,6 +2232,12 @@ class shader_core_ctx : public core_t {
   unsigned int m_occupied_ctas;
   std::bitset<MAX_THREAD_PER_SM> m_occupied_hwtid;
   std::map<unsigned int, unsigned int> m_occupied_cta_to_hwtid;
+  struct latency_elem_t
+  {
+    mem_fetch *mf;
+    unsigned long long ready_cycle;
+  };
+  std::list<latency_elem_t*> latency_queue;
 };
 
 class simt_core_cluster {

@@ -4350,6 +4350,7 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
     ::icnt_push(m_cluster_id, m_config->mem2device(destination), (void *)mf,
                 mf->size());
 }
+#define DEFUALT_LATENCY 0
 
 void simt_core_cluster::icnt_cycle() {
 
@@ -4382,6 +4383,41 @@ void simt_core_cluster::icnt_cycle() {
           
        }
     }
+
+  for(std::list<latency_elem_t*>::iterator iter = latency_queue.begin();
+			  iter != latency_queue.end(); iter++) 
+   {
+    mem_fetch* mf = (*iter)->mf;
+    if((*iter)->ready_cycle >= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
+    {
+      // Instruction is ready to be serviced
+      // Validate pages along the way
+      list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      std::list<mem_addr_t>::iterator iter2;
+      for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
+      {
+          m_gpu->get_global_memory()->validate_page(*iter2);
+      }
+
+      // The request is serviced.. Feed the mf to the upwards queue
+      //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
+      push_gmmu_cu_queue(mf);
+      latency_queue.remove(*iter);
+    }
+  }
+
+  for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
+    if(!empty_cu_gmmu_queue()))
+    {
+      mem_fetch* mf = front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
+      pop_cu_gmmu_queue();
+      latency_elem_t *p_t;
+      p_t->ready_cycle =  m_gpu->gpu_sim_cycle +  m_gpu->gpu_tot_sim_cycle + DEFUALT_LATENCY;
+      p_t->mf = mf;
+      latency_queue.push_back(p_t);
+    }
+  }
+  
 
   if (!m_response_fifo.empty()) {
     mem_fetch *mf = m_response_fifo.front();
