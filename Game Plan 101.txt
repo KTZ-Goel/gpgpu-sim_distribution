@@ -46,7 +46,7 @@ DONE!
 
 6. Work on adding latency in gpu-sim.cc though a memunit_cycle... - in progress..
 
->> Step 0: in the accessq_cycle: make sure to put the request even if one its pages from start to end, is managed and invalid.
+--done >> Step 0: in the accessq_cycle: make sure to put the request even if one its pages from start to end, is managed and invalid.
 >> Make a new queue: page_fault_latency
 >> Extract a new memory request from m_cu_gmmu_queue and get its first page and last page-> Push this into latency_queue and pop it from cu_gmmu_q
 >> Extract a request from latency_queue and forthat request Traverse for each page, and check for two things: { already present}
