@@ -1681,38 +1681,46 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
+#define DEFUALT_LATENCY 3
+
 void gpgpu_sim::memunit_cycle()
 {
-  // Dummy, just pull and push
-  simt_core_cluster * SIMTCluster;
+  simt_core_cluster* SIMTCluster;
+  
+  for(std::list<latency_elem_t*>::iterator iter = latency_queue.begin();
+			  iter != latency_queue.end(); iter++) 
+   {
+    mem_fetch* mf = iter->mf;
+    if(iter->ready_cycle >= gpu_sim_cycle + gpu_tot_sim_cycle)
+    {
+      // Instruction is ready to be serviced
+      // Validate pages along the way
+      list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      std::list<mem_addr_t>::iterator iter2;
+      for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
+      {
+          get_global_memory()->validate_page(*iter2);
+      }
+
+      // The request is serviced.. Feed the mf to the upwards queue
+      //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
+      getSIMTCluster(iter->simtClusterID)->push_gmmu_cu_queue(mf);
+      latency_queue.pop_front();
+    }
+  }
+
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
-    SIMTCluster = getSIMTCluster(i);
-    if(SIMTCluster == NULL)
-    {
-      std::cout<<"\nSomething weird, should print this, SIMTCluster is NULL"<<endl;
-    }
-    std::cout<<"The Queue is empty or not"<<SIMTCluster->empty_cu_gmmu_queue();
+    SIMTCluster = getSIMTCluster(i);    
     if(!(SIMTCluster->empty_cu_gmmu_queue()))
     {
       mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
-      
-      if(mf == NULL)
-      {
-        std::cout<<"\nSomething weird, should print this, mf is NULL";
-      }
       SIMTCluster->pop_cu_gmmu_queue();
-
-    // Validate pages along the way
-      list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-      std::list<mem_addr_t>::iterator iter;
-      for( iter = page_list.begin(); iter != page_list.end(); iter++)
-      {
-        get_global_memory()->validate_page(*iter);
-      }
-
-    // The request is serviced.. Feed the mf to the upwards queue
-      SIMTCluster->push_gmmu_cu_queue(mf);
+      latency_elem_t *p_t;
+      p_t->ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY;
+      p_t->mf = mf;
+      p_t->simtClusterID = i;
+      latency_queue.push_back(p_t);
     }
   }
 }
