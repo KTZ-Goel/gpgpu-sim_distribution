@@ -2555,7 +2555,8 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     std::cout<<"\n not a Gloabl access";
     return true;
   }
-
+  
+  std::cout<<"\n Is a global access for a managed page";
   if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
     // Page was found in TLB/Page table and doesn't incur a page fault
     std::cout<<"\nFound in Page table valid";
