@@ -1714,6 +1714,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
 
    } else if ( status == RESERVATION_FAIL ) {
        result = COAL_STALL;
+       std::cout<<"\n Reservation fail ::  No Decreased managed access request";
        assert( !read_sent );
        assert( !write_sent );
    } else {
@@ -1775,7 +1776,8 @@ mem_stage_stall_type ldst_unit::process_managed_memory_access_queue( cache_t *ca
    //const mem_access_t &access = inst.accessq_back();
    mem_fetch *mf = m_cu_core_queue.front();
    std::list<cache_event> events;
-   enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
+   //enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
+   enum cache_request_status status = HIT; // debug make cache hits
    return process_managed_cache_access( cache, mf->get_addr(), events, mf, status );
 }
 
@@ -3801,8 +3803,8 @@ bool shd_warp_t::functional_done() const {
 
 bool shd_warp_t::hardware_done() const {
   //std::cout<<"Instructions remaining "<<num_inst_in_pipeline() << ", Are all the managed done"<<managed_access_done()<<", Are all the stores done"<<stores_done()<<", Are all the functional done"<<functional_done()<<std::endl;;
-  //return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
-    return functional_done() && stores_done() && !inst_in_pipeline();
+  return functional_done() && stores_done() && managed_access_done() && !inst_in_pipeline();
+    //return functional_done() && stores_done() && !inst_in_pipeline();
 }
 
 bool shd_warp_t::waiting() {
