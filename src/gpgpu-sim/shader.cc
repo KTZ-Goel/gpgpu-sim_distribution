@@ -4407,7 +4407,7 @@ void simt_core_cluster::icnt_cycle() {
   }
 
   for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++) {
-    if(!empty_cu_gmmu_queue()))
+    if(!empty_cu_gmmu_queue())
     {
       mem_fetch* mf = front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
       pop_cu_gmmu_queue();
