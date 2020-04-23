@@ -2534,7 +2534,7 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
 
    pipelined_simd_unit::issue(reg_set);
 }
-*/
+ */
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
@@ -2557,6 +2557,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
 
   if(m_gpu->get_global_memory()->is_valid(page_no)){   // Check if page is valid
     // Page was found in TLB/Page table and doesn't incur a page fault
+    std::cout<<"\nFound in Page table valid";
     return true; 
   }
   else{
@@ -2567,6 +2568,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);
     std::cout<<"\nPushed into core to cu queue";
+
     // // Debug, assume, that the function is processed and returned, lets check here
     
     // std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
