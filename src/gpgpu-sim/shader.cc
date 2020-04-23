@@ -2671,7 +2671,7 @@ void ldst_unit::cycle() {
   bool done = true;
 
   // process the instruction's memory access queue for Page Table, and PCI-E
-  //done = accessq_cycle(pipe_reg, rc_fail, type);
+  done = accessq_cycle(pipe_reg, rc_fail, type);
 
   done &= shared_cycle(pipe_reg, rc_fail, type);
   done &= constant_cycle(pipe_reg, rc_fail, type);
