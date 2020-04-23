@@ -1663,7 +1663,7 @@ bool ldst_unit::shared_cycle(warp_inst_t &inst, mem_stage_stall_type &rc_fail,
     rc_fail = NO_RC_FAIL;
   return !stall;
 }
-
+"
 mem_stage_stall_type
 ldst_unit::process_managed_cache_access( cache_t* cache,
                                 new_addr_type address,
@@ -1676,6 +1676,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
    bool read_sent = was_read_sent(events);
    if( write_sent ) 
        m_core->inc_store_req( mf->get_inst().warp_id() );
+  
    if ( status == HIT ) {
        assert( !read_sent );
        m_core->dec_managed_access_req( mf->get_wid());
@@ -1778,6 +1779,7 @@ mem_stage_stall_type ldst_unit::process_managed_memory_access_queue( cache_t *ca
    std::list<cache_event> events;
    enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
    //enum cache_request_status status = HIT; // debug make cache hits
+   std::cout<<"cache status : "<<status;
    return process_managed_cache_access( cache, mf->get_addr(), events, mf, status );
 }
 
