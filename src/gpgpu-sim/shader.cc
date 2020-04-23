@@ -4352,7 +4352,7 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
     ::icnt_push(m_cluster_id, m_config->mem2device(destination), (void *)mf,
                 mf->size());
 }
-#define DEFUALT_LATENCY 10000
+#define DEFUALT_LATENCY 2
 
 void simt_core_cluster::icnt_cycle() {
 
@@ -4405,7 +4405,7 @@ void simt_core_cluster::icnt_cycle() {
     while(iter != latency_queue.end()) 
     {
       mem_fetch* mf = (*iter).mf;
-      if((*iter).ready_cycle >= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
+      if((*iter).ready_cycle <= m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle)
       {
         // Instruction is ready to be serviced
         // Validate pages along the way
