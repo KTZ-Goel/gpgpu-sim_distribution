@@ -39,6 +39,7 @@
 #include "addrdec.h"
 #include "gpu-cache.h"
 #include "shader.h"
+#include "memory.h"
 
 // constants for statistics printouts
 #define GPU_RSTAT_SHD_INFO 0x1
