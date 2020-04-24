@@ -1684,7 +1684,8 @@ void gpgpu_sim::issue_block2core() {
 #define DEFUALT_LATENCY 10
 #define PER_PAGE_LATENCY 0
 bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
-    return elem.page_addr == page_num;
+  std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
+  return elem.page_addr == page_num;
 }
 
 std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
@@ -1774,6 +1775,7 @@ void gpgpu_sim::memunit_cycle()
           temp.page_addr = (*iter);
           temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
           page_latency_queue.push_back(temp);
+          iter++;
           k++;
         }
       }

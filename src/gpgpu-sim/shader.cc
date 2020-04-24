@@ -2569,7 +2569,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_back(),
                           m_core->get_gpu()->gpu_sim_cycle +
                               m_core->get_gpu()->gpu_tot_sim_cycle);
-
+    std::cout<<"\nGotto fetch from CPU - page fault";
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);
     //std::cout<<"\nPushed into core to cu queue";
