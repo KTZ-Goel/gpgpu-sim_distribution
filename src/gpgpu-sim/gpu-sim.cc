@@ -1683,6 +1683,10 @@ void gpgpu_sim::issue_block2core() {
 
 #define DEFUALT_LATENCY 10
 #define PER_PAGE_LATENCY 0
+bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
+    return elem.page_addr == page_num;
+}
+
 std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
 
   if(page_latency_queue.empty()) return page_list;
@@ -1693,10 +1697,11 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
   std::list<mem_addr_t>::iterator iter;
   for( iter = page_list.begin(); iter != page_list.end(); iter++)
   {
-      if(std::find_if(page_latency_queue.begin(), page_latency_queue.end(), 
-                                [iter](page_latency_elem_t &elem){ return elem.page_addr == *iter}) == page_latency_queue.end())
+      auto predicate = std::bind(mshr_lookup, std::placeholders::_1, *iter);
+      if(std::find_if(page_latency_queue.begin(), page_latency_queue.end(), predicate) == page_latency_queue.end())
       {
         new_req_list.push_back(*iter);
+	std::cout<<"\n new page reuest in... pushing to non_coal_list";
       }
   }
 
@@ -1706,7 +1711,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
 
 void gpgpu_sim::memunit_cycle()
 {  
-  std::cout<<"\nEntered Memunit cycle";
+  //std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
 
   if(!latency_queue.empty()) 
@@ -1718,7 +1723,7 @@ void gpgpu_sim::memunit_cycle()
       std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
       if(page_list.empty())   
       {
-        std::cout<<"Now I am servicing mem access which is ready at "<<(*iter).ready_cycle<<std::endl;
+        std::cout<<"Now I am servicing mem access which is ready at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
         getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
         latency_queue.erase(iter++);
       }
@@ -1768,7 +1773,7 @@ void gpgpu_sim::memunit_cycle()
           page_latency_elem_t temp; 
           temp.page_addr = (*iter);
           temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
-          page_latency_queue.push_back(*iter);
+          page_latency_queue.push_back(temp);
           k++;
         }
       }

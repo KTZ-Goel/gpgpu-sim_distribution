@@ -479,6 +479,16 @@ class watchpoint_event {
 class gpgpu_sim : public gpgpu_t {
  public:
   gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx);
+  struct latency_elem_t
+  {
+    mem_fetch *mf;
+    int simtClusterID;
+  };
+  struct page_latency_elem_t
+  {
+    mem_addr_t page_addr;
+    unsigned long long ready_cycle;
+  };
 
   void set_prop(struct cudaDeviceProp *prop);
 
@@ -491,7 +501,7 @@ class gpgpu_sim : public gpgpu_t {
   void init();
   void cycle();
   void memunit_cycle(); // This will be memory management cycle
-
+  static bool mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num);
   /**
    * \brief utility function to check whether the page request has already been raised
    */
@@ -585,18 +595,8 @@ class gpgpu_sim : public gpgpu_t {
 
   void gpgpu_debug();
 
-  struct page_latency_elem_t
-  {
-    mem_addr_t page_addr;
-    unsigned long long ready_cycle;
-  };
   std::list<page_latency_elem_t> page_latency_queue;
    
-  struct latency_elem_t
-  {
-    mem_fetch *mf;
-    int simtClusterID;
-  };
   std::list<latency_elem_t> latency_queue;
 
   ///// data /////
