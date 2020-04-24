@@ -47,14 +47,15 @@ DONE!
 6. Work on adding latency in gpu-sim.cc though a memunit_cycle... - in progress..
 
 --done >> Step 0: in the accessq_cycle: make sure to put the request even if one its pages from start to end, is managed and invalid.
->> Make a new queue: page_fault_latency
->> Extract a new memory request from m_cu_gmmu_queue and get its first page and last page-> Push this into latency_queue and pop it from cu_gmmu_q
->> Extract a request from latency_queue and forthat request Traverse for each page, and check for two things: { already present}
+--done >> Make a new queue: page_fault_latency
+>> Extract a new memory request from m_cu_gmmu_queue and get its first page and last page-> Push this into latency_queue.
+   Extract a request from m_cu_gmmu_queue and forthat request Traverse for each page, and check for two things: { already present}
                                                     i) Is the page already valid (get_faulty_pages) { No need for this step, just iterate through faulty pages}
                                                     ii) Is the page already in the list of page_fault_queue (For this traverse the page and check whether it matches any of the pages)
->> If that page returns false, for both of above, then it is a new request and put that request in the page_fault_queue list.
->> Now, check from page_fault_queue list, each page, whether it is ready or not, if ready pop that page from the queue, and mark that page as valid.
->> Now, for each memory request in the latency_queue, check whether all of its pages are valid, if all are valid, then pop it from latency_queue and push it to the
+   If that page returns false, for both of above, then it is a new request and put that request in the page_fault_queue list.
+   Pop the front of m_cu_gmmu_queue. 
+--done >> Now, check from page_fault_queue list, each page, whether it is ready or not, if ready pop that page from the queue, and mark that page as valid.
+--done >> Now, for each memory request in the latency_queue, check whether all of its pages are valid, if all are valid, then pop it from latency_queue and push it to the
    gmmu_cu queue
 
 

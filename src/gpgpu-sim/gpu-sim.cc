@@ -1681,7 +1681,28 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFUALT_LATENCY 100
+#define DEFUALT_LATENCY 10
+#define PER_PAGE_LATENCY 0
+std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
+
+  if(page_latency_queue.empty()) return page_list;
+  if(page_list.empty()) return page_list;
+  
+  std::list<mem_addr_t> new_req_list;
+  // Check if the page already in page_latency_queue
+  std::list<mem_addr_t>::iterator iter;
+  for( iter = page_list.begin(); iter != page_list.end(); iter++)
+  {
+      if(std::find_if(page_latency_queue.begin(), page_latency_queue.end(), 
+                                [iter](page_latency_elem_t &elem){ return elem.page_addr == *iter}) == page_latency_queue.end())
+      {
+        new_req_list.push_back(*iter);
+      }
+  }
+
+  return new_req_list;
+}
+
 
 void gpgpu_sim::memunit_cycle()
 {  
@@ -1694,19 +1715,9 @@ void gpgpu_sim::memunit_cycle()
     while(iter != latency_queue.end()) 
     {
       mem_fetch* mf = (*iter).mf;
-      if((*iter).ready_cycle <= gpu_sim_cycle + gpu_tot_sim_cycle)
+      std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      if(page_list.empty())   
       {
-        // Instruction is ready to be serviced
-        // Validate pages along the way
-        list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-        std::list<mem_addr_t>::iterator iter2;
-        for( iter2 = page_list.begin(); iter2 != page_list.end(); iter2++)
-        {
-            get_global_memory()->validate_page(*iter2);
-        }
-
-        // The request is serviced.. Feed the mf to the upwards queue
-        //int simt_cluster_id = mf->get_sid() / m_config.num_core_per_cluster();
         std::cout<<"Now I am servicing mem access which is ready at "<<(*iter).ready_cycle<<std::endl;
         getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
         latency_queue.erase(iter++);
@@ -1718,6 +1729,20 @@ void gpgpu_sim::memunit_cycle()
     }
   }
 
+  if(!page_latency_queue.empty())
+  {
+    std::list<page_latency_elem_t>::iterator iter = page_latency_queue.begin();
+    while(iter != page_latency_queue.end()) 
+    {
+      if((*iter).ready_cycle <= gpu_sim_cycle + gpu_tot_sim_cycle) // page is ready
+      {
+         validate_page((*item).page_addr);  // validate the page
+         page_latency_queue.erase(iter++);
+      }
+      else iter++;
+    }
+  }
+
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);    
@@ -1726,11 +1751,28 @@ void gpgpu_sim::memunit_cycle()
       mem_fetch* mf = SIMTCluster->front_cu_gmmu_queue();    // Pull from the cluster to memory unit queue
       SIMTCluster->pop_cu_gmmu_queue();
       latency_elem_t p_t;
-      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY;
       p_t.mf = mf;
       p_t.simtClusterID = i;
       std::cout<<"\n"<<gpu_sim_cycle +  gpu_tot_sim_cycle <<"\t This memory request wil be ready at "<<p_t.ready_cycle<<std::endl;
       latency_queue.push_back(p_t);
+
+      // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
+      // in the list
+      std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+      std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
+      if(!page_to_push.empty())
+      {
+        std::list<mem_addr_t>::iterator iter = page_to_push.begin();
+        int k = 1;
+        while(iter != page_to_push.end())
+        {
+          page_latency_elem_t temp; 
+          temp.page_addr = (*iter);
+          temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
+          page_latency_queue.push_back(*iter);
+          k++;
+        }
+      }
     }
   }
 }

@@ -489,7 +489,13 @@ class gpgpu_sim : public gpgpu_t {
 
   void init();
   void cycle();
-  void memunit_cycle(); // This will be memory cycle
+  void memunit_cycle(); // This will be memory management cycle
+
+  /**
+   * \brief utility function to check whether the page request has already been raised
+   */
+  std::list<mem_addr_t> check_coal(std::list<mem_addr_t> page_list);
+  
   bool active();
   bool cycle_insn_cta_max_hit() {
     return (m_config.gpu_max_cycle_opt && (gpu_tot_sim_cycle + gpu_sim_cycle) >=
@@ -577,11 +583,17 @@ class gpgpu_sim : public gpgpu_t {
   void print_shader_cycle_distro(FILE *fout) const;
 
   void gpgpu_debug();
+
+  struct page_latency_elem_t
+  {
+    mem_addr_t page_addr;
+    unsigned long long ready_cycle;
+  }
+  std::list<page_latency_elem_t> page_latency_queue;
    
   struct latency_elem_t
   {
     mem_fetch *mf;
-    unsigned long long ready_cycle;
     int simtClusterID;
   };
   std::list<latency_elem_t> latency_queue;
