@@ -495,7 +495,7 @@ class gpgpu_sim : public gpgpu_t {
    * \brief utility function to check whether the page request has already been raised
    */
   std::list<mem_addr_t> check_coal(std::list<mem_addr_t> page_list);
-  
+
   bool active();
   bool cycle_insn_cta_max_hit() {
     return (m_config.gpu_max_cycle_opt && (gpu_tot_sim_cycle + gpu_sim_cycle) >=
@@ -588,7 +588,7 @@ class gpgpu_sim : public gpgpu_t {
   {
     mem_addr_t page_addr;
     unsigned long long ready_cycle;
-  }
+  };
   std::list<page_latency_elem_t> page_latency_queue;
    
   struct latency_elem_t
