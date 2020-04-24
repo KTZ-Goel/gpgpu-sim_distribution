@@ -44,7 +44,7 @@ DONE!
 
 5.2 Add latency in cluster::ICNT_cycle and pop/push into the cu_gmmu/gmmu_cu queues... -  DOne and Working
 
-6. Work on adding latency in gpu-sim.cc though a memunit_cycle... - in progress..
+6. Work on adding latency in gpu-sim.cc though a memunit_cycle... - Done
 
 --done >> Step 0: in the accessq_cycle: make sure to put the request even if one its pages from start to end, is managed and invalid.
 --done >> Make a new queue: page_fault_latency
