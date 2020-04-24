@@ -495,7 +495,7 @@ class gpgpu_sim : public gpgpu_t {
   /**
    * \brief utility function to check whether the page request has already been raised
    */
-  std::list<mem_addr_t> check_coal(std::list<mem_addr_t> page_list);
+  std::list<mem_addr_t> get_non_coal(std::list<mem_addr_t> page_list);
 
   bool active();
   bool cycle_insn_cta_max_hit() {

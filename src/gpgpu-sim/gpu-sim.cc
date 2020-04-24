@@ -1687,7 +1687,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
 
   if(page_latency_queue.empty()) return page_list;
   if(page_list.empty()) return page_list;
-  
+
   std::list<mem_addr_t> new_req_list;
   // Check if the page already in page_latency_queue
   std::list<mem_addr_t>::iterator iter;
@@ -1736,7 +1736,7 @@ void gpgpu_sim::memunit_cycle()
     {
       if((*iter).ready_cycle <= gpu_sim_cycle + gpu_tot_sim_cycle) // page is ready
       {
-         validate_page((*item).page_addr);  // validate the page
+         get_global_memory()->validate_page((*iter).page_addr);  // validate the page
          page_latency_queue.erase(iter++);
       }
       else iter++;
@@ -1753,7 +1753,6 @@ void gpgpu_sim::memunit_cycle()
       latency_elem_t p_t;
       p_t.mf = mf;
       p_t.simtClusterID = i;
-      std::cout<<"\n"<<gpu_sim_cycle +  gpu_tot_sim_cycle <<"\t This memory request wil be ready at "<<p_t.ready_cycle<<std::endl;
       latency_queue.push_back(p_t);
 
       // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
