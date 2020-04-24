@@ -1681,8 +1681,8 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFUALT_LATENCY 10
-#define PER_PAGE_LATENCY 0
+#define DEFUALT_LATENCY 100
+#define PER_PAGE_LATENCY 1
 bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
   std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
   return elem.page_addr == page_num;
@@ -1702,7 +1702,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
       if(std::find_if(page_latency_queue.begin(), page_latency_queue.end(), predicate) == page_latency_queue.end())
       {
         new_req_list.push_back(*iter);
-	std::cout<<"\n new page reuest in... pushing to non_coal_list";
+	      std::cout<<"\n new page reuest in... pushing to non_coal_list";
       }
   }
 
@@ -1759,7 +1759,7 @@ void gpgpu_sim::memunit_cycle()
       latency_elem_t p_t;
       p_t.mf = mf;
       p_t.simtClusterID = i;
-      latency_queue.push_back(p_t);
+      latency_queue.push_back(p_t); // stays in this queue till it is serviced on a page by page basis
 
       // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
       // in the list
