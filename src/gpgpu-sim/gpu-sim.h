@@ -502,7 +502,7 @@ class gpgpu_sim : public gpgpu_t {
 
   void launch(kernel_info_t *kinfo);
   void register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream);
-  void activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
+  void activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream);
   bool can_start_kernel();
   unsigned finished_kernel();
   void set_kernel_done(kernel_info_t *kernel);
