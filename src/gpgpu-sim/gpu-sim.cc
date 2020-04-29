@@ -1723,7 +1723,7 @@ void gpgpu_sim::register_prefetch(size_t m_device_addr, size_t count, struct CUs
 {
     struct prefetch_req pre_q;
     pre_q.start_addr = m_device_addr;
-    pre_q.size = m_cnt;
+    pre_q.size = count;
     pre_q.active = false;
     pre_q.m_stream = m_stream;
     prefetch_buffer.push_back(pre_q);
