@@ -1083,11 +1083,21 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
 	// Additionally, stream must be associated with a device that has a non-zero value for the device attribute cudaDevAttrConcurrentManagedAccess.
 	// The memory range must refer to managed memory allocated via cudaMallocManaged or declared via __managed__ variables.
 
-	struct CUstream_st *s = (struct CUstream_st *)stream;
+	gpgpu_context *ctx;
+  if (gpgpu_ctx) {
+    ctx = gpgpu_ctx;
+  } else {
+    ctx = GPGPU_Context();
+  }
+  if (g_debug_execution >= 3) {
+    announce_call(__my_func__);
+  }
+  
+  struct CUstream_st *s = (struct CUstream_st *)stream;
 	
 	if (dstDevice == cudaCpuDeviceId) {
 	        // not a priority thing as cudaDeviceSynchronize does the same job
-        } else if (dstDevice == g_active_device) {
+  } else if (dstDevice == ctx->api->g_active_device) {
 		CUctx_st* context = GPGPUSim_Context();
 
 		const std::map<uint64_t, struct allocation_info*>& managedAllocations = 
@@ -1097,16 +1107,16 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
 
 		for(std::map<uint64_t, struct allocation_info*>::const_iterator iter = managedAllocations.begin();
        		    iter != managedAllocations.end(); iter++) {
-                    // find the allocation for the host pointer recieved as argument
-                    // remember: we have emulated behavior of UVM by having both CPU and GPU copies of same data
-       		    if( (uint64_t)devPtr >= iter->first && (uint64_t)devPtr + count <= iter->first + iter->second->allocation_size) {
-			allocationPtr = iter->second->gpu_mem_addr;
-                        // gpuPtr is offset to align with host ptr or cpu ptr from the allocation start
+        // find the allocation for the host pointer recieved as argument
+        // remember: we have emulated behavior of UVM by having both CPU and GPU copies of same data
+      if( (uint64_t)devPtr >= iter->first && (uint64_t)devPtr + count <= iter->first + iter->second->allocation_size) {
+			  allocationPtr = iter->second->gpu_mem_addr;
+        // gpuPtr is offset to align with host ptr or cpu ptr from the allocation start
 	   		gpuPtr = iter->second->gpu_mem_addr + ((uint64_t)devPtr - iter->first);
 
 			break;
-       		    }
-   		}
+      }
+    }
 
 		assert(gpuPtr != NULL);
 
