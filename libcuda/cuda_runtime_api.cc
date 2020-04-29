@@ -1098,7 +1098,7 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
 	if (dstDevice == cudaCpuDeviceId) {
 	        // not a priority thing as cudaDeviceSynchronize does the same job
   } else if (dstDevice == ctx->api->g_active_device) {
-		CUctx_st* context = GPGPUSim_Context();
+		CUctx_st* context = GPGPUSim_Context(ctx);
 
 		const std::map<uint64_t, struct allocation_info*>& managedAllocations = 
 		    context->get_device()->get_gpgpu()->gpu_get_managed_allocations();
@@ -1110,10 +1110,8 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
         // find the allocation for the host pointer recieved as argument
         // remember: we have emulated behavior of UVM by having both CPU and GPU copies of same data
       if( (uint64_t)devPtr >= iter->first && (uint64_t)devPtr + count <= iter->first + iter->second->allocation_size) {
-			  allocationPtr = iter->second->gpu_mem_addr;
         // gpuPtr is offset to align with host ptr or cpu ptr from the allocation start
 	   		gpuPtr = iter->second->gpu_mem_addr + ((uint64_t)devPtr - iter->first);
-
 			break;
       }
     }
@@ -1122,7 +1120,7 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
 
 		g_stream_manager->register_prefetch((size_t)gpuPtr, (size_t) count , s == NULL ? g_stream_manager->get_stream_zero() : s );
 
-		g_stream_manager->push( stream_operation((size_t)start_addr, count , s) );
+		g_stream_manager->push( stream_operation((size_t)gpuPtr, count , s) );
 
 	} else {
 		abort();
