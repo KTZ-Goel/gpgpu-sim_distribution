@@ -1077,7 +1077,7 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
 }
 
 // Dummy function to be changed later
-__host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0)
+__host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0, gpgpu_context *gpgpu_ctx = NULL)
 {
   	// If dstDevice is a GPU, then the device attribute cudaDevAttrConcurrentManagedAccess must be non-zero.
 	// Additionally, stream must be associated with a device that has a non-zero value for the device attribute cudaDevAttrConcurrentManagedAccess.
@@ -1100,12 +1100,11 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
   } else if (dstDevice == ctx->api->g_active_device) {
 		CUctx_st* context = GPGPUSim_Context(ctx);
 
-		const std::map<uint64_t, struct allocation_info*>& managedAllocations = 
-		    context->get_device()->get_gpgpu()->gpu_get_managed_allocations();
+		const std::map<unsigned long long, struct allocation_info*>& managedAllocations = context->get_device()->get_gpgpu()->gpu_get_managed_allocations();
 		
 		uint64_t gpuPtr = 0;
 
-		for(std::map<uint64_t, struct allocation_info*>::const_iterator iter = managedAllocations.begin();
+		for(std::map<unsigned long long, struct allocation_info*>::const_iterator iter = managedAllocations.begin();
        		    iter != managedAllocations.end(); iter++) {
         // find the allocation for the host pointer recieved as argument
         // remember: we have emulated behavior of UVM by having both CPU and GPU copies of same data
@@ -1118,9 +1117,9 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t c
 
 		assert(gpuPtr != NULL);
 
-		g_stream_manager->register_prefetch((size_t)gpuPtr, (size_t) count , s == NULL ? g_stream_manager->get_stream_zero() : s );
+		ctx->the_gpgpusim->g_stream_manager->register_prefetch((size_t)gpuPtr, (size_t) count , s == NULL ? ctx->the_gpgpusim->g_stream_manager->get_stream_zero() : s );
 
-		g_stream_manager->push( stream_operation((size_t)gpuPtr, count , s) );
+		ctx->the_gpgpusim->g_stream_manager->push( stream_operation((size_t)gpuPtr, count , s) );
 
 	} else {
 		abort();
