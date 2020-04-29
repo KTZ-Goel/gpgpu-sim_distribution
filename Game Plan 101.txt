@@ -75,3 +75,7 @@ Adding CudaMemPrefetchAsync:
 3. CudaMemPrefetchAsync calls the function and through stream manager the gpgpu-sim function is called...
     3.1. This function pushes to the prefetch_queue
 4. Activate the request in do_operation from the stream_manager (checksif the prefetch request belongs to the particular stream and schedules it)
+Done till 4
+
+5.
+6. Actually make it work
