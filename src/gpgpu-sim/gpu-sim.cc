@@ -1709,6 +1709,25 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
   return new_req_list;
 }
 
+void gpgpu_sim::activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
+{
+  for(std::list<prefetch_req>::iterator iter = prefetch_buffer.begin(); iter!=prefetch_buffer.end(); iter++){
+      if(iter->start_addr == m_device_addr && iter->size == m_cnt && iter->m_stream->get_uid() == m_stream->get_uid()) {
+        iter->active = true;
+        return;
+      }
+  }
+}
+
+void gpgpu_sim::register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream)
+{
+    struct prefetch_req pre_q;
+    pre_q.start_addr = m_device_addr;
+    pre_q.size = m_cnt;
+    pre_q.active = false;
+    pre_q.m_stream = m_stream;
+    prefetch_buffer.push_back(pre_q);
+}
 
 void gpgpu_sim::memunit_cycle()
 {  

@@ -67,3 +67,11 @@ Side Algo:
 
 Wildly Optimistic Future : 
     Prefetching can be added. 
+
+Adding CudaMemPrefetchAsync: 
+
+1. Make a function, to be added in the stream_manager.cc/g_stream....
+2. Make structure to hold individual prefetch requests, same as dada in gpu_sim class.
+3. CudaMemPrefetchAsync calls the function and through stream manager the gpgpu-sim function is called...
+    3.1. This function pushes to the prefetch_queue
+4. Activate the request in do_operation from the stream_manager (checksif the prefetch request belongs to the particular stream and schedules it)

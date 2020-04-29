@@ -490,9 +490,19 @@ class gpgpu_sim : public gpgpu_t {
     unsigned long long ready_cycle;
   };
 
+  struct prefetch_req 
+  {
+    mem_addr_t start_addr;
+    size_t size;
+    CUstream_st *m_stream;
+    bool active;
+  };
+
   void set_prop(struct cudaDeviceProp *prop);
 
   void launch(kernel_info_t *kinfo);
+  void register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream);
+  void activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
   bool can_start_kernel();
   unsigned finished_kernel();
   void set_kernel_done(kernel_info_t *kernel);
@@ -598,6 +608,8 @@ class gpgpu_sim : public gpgpu_t {
   std::list<page_latency_elem_t> page_latency_queue;
    
   std::list<latency_elem_t> latency_queue;
+
+  std::list<prefetch_req> prefetch_buffer;   // Prefetch request buffer
 
   ///// data /////
 
