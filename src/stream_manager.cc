@@ -261,9 +261,9 @@ bool stream_manager::operation(bool *sim) {
     }
     op.get_stream()->cancel_front();
   }
-  std::cout<<"Mutex wali cheez hone wali hai"<<std::endl;
+  //std::cout<<"Mutex wali cheez hone wali hai"<<std::endl;
   pthread_mutex_unlock(&m_lock);
-  std::cout<<"Mutex wali cheez hui hai"<<std::endl;
+  //std::cout<<"Mutex wali cheez hui hai"<<std::endl;
   // pthread_mutex_lock(&m_lock);
   // simulate a clock cycle on the GPU
   return check;
