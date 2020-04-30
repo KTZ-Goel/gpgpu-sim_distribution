@@ -1735,9 +1735,10 @@ void gpgpu_sim::do_prefetch()
   std::list<prefetch_req>::iterator iter = prefetch_buffer.begin();
   while(iter != prefetch_buffer.end())
   {
+    std::cout<<"\n\nPrefetch request is "<< (*iter).active;
     if((*iter).active)
     {
-      std::cout<<"The address "<< (*iter).start_addr <<" is now ready to be prefetched"<<std::endl;
+      std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
       std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
       std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
       iter++;
