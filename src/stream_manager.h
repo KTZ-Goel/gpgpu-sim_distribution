@@ -33,6 +33,8 @@
 #include <time.h>
 #include <list>
 #include "abstract_hardware_model.h"
+// Added Header file
+#include "memory.h"
 
 // class stream_barrier {
 // public:
