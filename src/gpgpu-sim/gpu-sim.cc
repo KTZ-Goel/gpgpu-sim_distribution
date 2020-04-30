@@ -1737,31 +1737,34 @@ void gpgpu_sim::do_prefetch()
 {
   // check if there is anything in the prefetch cycle
   std::list<prefetch_req>::iterator iter = prefetch_buffer.begin();
-  while(iter != prefetch_buffer.end())
+  if(!prefetch_buffer.empty())
   {
-    if((*iter).active)
+    while(iter != prefetch_buffer.end())
     {
-      std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
-      std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
-      std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
-      
-      if(!page_to_push.empty())
+      if((*iter).active)
       {
-        std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
-        int k = 1;
-        while(iter2 != page_to_push.end())
+        std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
+        std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
+        std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
+        
+        if(!page_to_push.empty())
         {
-          page_latency_elem_t temp; 
-          temp.page_addr = (*iter2);
-          temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
-          page_latency_queue.push_back(temp);
-          iter2++;
-          k++;
+          std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
+          int k = 1;
+          while(iter2 != page_to_push.end())
+          {
+            page_latency_elem_t temp; 
+            temp.page_addr = (*iter2);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
+            page_latency_queue.push_back(temp);
+            iter2++;
+            k++;
+          }
         }
+        prefetch_buffer.erase(iter);
       }
-      prefetch_buffer.erase(iter);
+      iter++;
     }
-    iter++;
   }
 }
 
