@@ -119,8 +119,8 @@ bool stream_operation::do_operation(gpgpu_sim *gpu) {
     printf("GPGPU-Sim API: stream %u performing ", m_stream->get_uid());
   switch (m_type) {
     case stream_prefetch_host_to_device:
-        if (g_debug_execution >= 3) printf("Stream Prefetch host-to-device\n");
-        gpu->activate_prefetch(m_device_address_dst, m_cnt, m_stream);
+      if (g_debug_execution >= 3) printf("Stream Prefetch host-to-device\n");
+      gpu->activate_prefetch(m_device_address_dst, m_cnt, m_stream);
       break;
     case stream_memcpy_host_to_device:
       if (g_debug_execution >= 3) printf("memcpy host-to-device\n");
@@ -261,7 +261,9 @@ bool stream_manager::operation(bool *sim) {
     }
     op.get_stream()->cancel_front();
   }
+  std::cout<<"Mutex wali cheez hone wali hai"<<std::endl;
   pthread_mutex_unlock(&m_lock);
+  std::cout<<"Mutex wali cheez hui hai"<<std::endl;
   // pthread_mutex_lock(&m_lock);
   // simulate a clock cycle on the GPU
   return check;
