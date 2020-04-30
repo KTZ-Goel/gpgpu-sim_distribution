@@ -916,6 +916,7 @@ void gpgpu_sim::reinit_clock_domains(void) {
   dram_time = 0;
   icnt_time = 0;
   l2_time = 0;
+  memunit_time = 0;
 }
 
 bool gpgpu_sim::active() {
@@ -1647,7 +1648,17 @@ void dram_t::dram_log(int task) {
 
 // Find next clock domain and increment its time
 int gpgpu_sim::next_clock_domain(void) {
-  double smallest = min3(core_time, icnt_time, dram_time);
+
+  // to get the cycles spent for any cuda stream operation before and after the kernel is launched
+  // monotonically increase the total simulation cycle
+  if( !active() ) {
+      int mask = 0x00;
+      mask |= MEMUNIT;
+      gpu_tot_sim_cycle++;
+      return mask;
+  }
+
+  double smallest = min3(core_time, icnt_time, dram_time, memunit_time);
   int mask = 0x00;
   if (l2_time <= smallest) {
     smallest = l2_time;
@@ -1665,6 +1676,10 @@ int gpgpu_sim::next_clock_domain(void) {
   if (core_time <= smallest) {
     mask |= CORE;
     core_time += m_config.core_period;
+  }
+  if ( memunit_time <= smallest) {
+    mask |= MEMUNIT; 
+    memunit_time += m_config.core_period;
   }
   return mask;
 }
@@ -1849,7 +1864,7 @@ void gpgpu_sim::cycle() {
   int clock_mask = next_clock_domain();
   
   /// Add a cycle, and instatiate in gpgpu_sim class
-  //if (clock_mask & MEMUNIT)
+  if (clock_mask & MEMUNIT)
     memunit_cycle();
   
   if (clock_mask & CORE) {

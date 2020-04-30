@@ -636,6 +636,7 @@ class gpgpu_sim : public gpgpu_t {
   double icnt_time;
   double dram_time;
   double l2_time;
+  double memunit_time;
 
   // debug
   bool gpu_deadlock;
