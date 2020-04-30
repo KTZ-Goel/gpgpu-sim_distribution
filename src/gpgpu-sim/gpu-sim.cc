@@ -1765,7 +1765,7 @@ void gpgpu_sim::do_prefetch()
 
 void gpgpu_sim::memunit_cycle()
 {  
-  //std::cout<<"\nEntered Memunit cycle";
+  std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
 
   if(!latency_queue.empty()) 
