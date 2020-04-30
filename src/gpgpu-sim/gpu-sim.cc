@@ -1761,9 +1761,9 @@ void gpgpu_sim::do_prefetch()
             k++;
           }
         }
-        prefetch_buffer.erase(iter);
+        prefetch_buffer.erase(iter++);
       }
-      iter++;
+      else iter++;
     }
   }
 }
