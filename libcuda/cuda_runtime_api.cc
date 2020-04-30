@@ -2442,7 +2442,7 @@ __host__ cudaError_t CUDARTAPI cudaMallocManaged(void **devPtr, size_t size) {
   return cudaMallocManagedInternal(devPtr, size);
 }
 
-__host__ cudaError_t CUDARTAPI cudaMallocManaged(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0) {
+__host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0) {
   return cudaMemPrefetchAsyncInternal(devPtr, count, dstDevice, stream);
 }
 
