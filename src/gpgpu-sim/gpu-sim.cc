@@ -1747,7 +1747,7 @@ void gpgpu_sim::do_prefetch()
         while(iter2 != page_to_push.end())
         {
           page_latency_elem_t temp; 
-          temp.page_addr = (*iter);
+          temp.page_addr = (*iter2);
           temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
           page_latency_queue.push_back(temp);
           iter2++;
@@ -1799,7 +1799,7 @@ void gpgpu_sim::memunit_cycle()
   }
   
   int k = 1;
-  do_prefetch();
+  //do_prefetch();
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);    
