@@ -1077,18 +1077,15 @@ __host__ cudaError_t CUDARTAPI cudaMallocManagedInternal(void **devPtr, size_t s
 }
 
 // Dummy function to be changed later
-__host__ cudaError_t CUDARTAPI cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0, gpgpu_context *gpgpu_ctx = NULL)
-{
-  	// If dstDevice is a GPU, then the device attribute cudaDevAttrConcurrentManagedAccess must be non-zero.
-	// Additionally, stream must be associated with a device that has a non-zero value for the device attribute cudaDevAttrConcurrentManagedAccess.
-	// The memory range must refer to managed memory allocated via cudaMallocManaged or declared via __managed__ variables.
+__host__ cudaError_t CUDARTAPI cudaMemPrefetchAsyncInternal(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0, gpgpu_context *gpgpu_ctx = NULL) {
 
-	gpgpu_context *ctx;
+  gpgpu_context *ctx;
   if (gpgpu_ctx) {
     ctx = gpgpu_ctx;
   } else {
     ctx = GPGPU_Context();
   }
+
   if (g_debug_execution >= 3) {
     announce_call(__my_func__);
   }
@@ -2443,6 +2440,10 @@ __host__ cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size) {
 
 __host__ cudaError_t CUDARTAPI cudaMallocManaged(void **devPtr, size_t size) {
   return cudaMallocManagedInternal(devPtr, size);
+}
+
+__host__ cudaError_t CUDARTAPI cudaMallocManaged(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0) {
+  return cudaMemPrefetchAsyncInternal(devPtr, count, dstDevice, stream);
 }
 
 __host__ cudaError_t CUDARTAPI cudaMallocHost(void **ptr, size_t size) {
