@@ -1729,6 +1729,36 @@ void gpgpu_sim::register_prefetch(size_t m_device_addr, size_t count, struct CUs
     prefetch_buffer.push_back(pre_q);
 }
 
+void gpgpu_sim::do_prefetch()
+{
+  // check if there is anything in the prefetch cycle
+  std::list<prefetch_req>::iterator iter = prefetch_buffer.begin();
+  while(iter != prefetch_buffer.end())
+  {
+    if((*iter).active)
+    {
+      std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
+      std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
+      iter++;
+      if(!page_to_push.empty())
+      {
+        std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
+        int k = 1;
+        while(iter2 != page_to_push.end())
+        {
+          page_latency_elem_t temp; 
+          temp.page_addr = (*iter);
+          temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
+          page_latency_queue.push_back(temp);
+          iter2++;
+          k++;
+        }
+      }
+      prefetch_buffer.erase(iter);
+    }
+  }
+}
+
 void gpgpu_sim::memunit_cycle()
 {  
   //std::cout<<"\nEntered Memunit cycle";
@@ -1767,7 +1797,9 @@ void gpgpu_sim::memunit_cycle()
       else iter++;
     }
   }
-
+  
+  int k = 1;
+  do_prefetch();
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);    
@@ -1787,7 +1819,6 @@ void gpgpu_sim::memunit_cycle()
       if(!page_to_push.empty())
       {
         std::list<mem_addr_t>::iterator iter = page_to_push.begin();
-        int k = 1;
         while(iter != page_to_push.end())
         {
           page_latency_elem_t temp; 

@@ -497,6 +497,7 @@ class gpgpu_sim : public gpgpu_t {
     CUstream_st *m_stream;
     bool active;
   };
+  void do_prefetch();
 
   void set_prop(struct cudaDeviceProp *prop);
 
