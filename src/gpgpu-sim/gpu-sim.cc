@@ -1681,8 +1681,8 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFUALT_LATENCY 100
-#define PER_PAGE_LATENCY 1
+#define DEFUALT_LATENCY 1000
+#define PER_PAGE_LATENCY 10
 bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
   std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
   return elem.page_addr == page_num;
@@ -1702,7 +1702,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
       if(std::find_if(page_latency_queue.begin(), page_latency_queue.end(), predicate) == page_latency_queue.end())
       {
         new_req_list.push_back(*iter);
-	      std::cout<<"\n new page reuest in... pushing to non_coal_list";
+	      std::cout<<"\n new page request in... pushing to non_coal_list";
       }
   }
 
@@ -1737,6 +1737,7 @@ void gpgpu_sim::do_prefetch()
   {
     if((*iter).active)
     {
+      std::cout<<"The address "<< (*iter).start_addr <<" is now ready to be prefetched"<<std::endl;
       std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
       std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
       iter++;
