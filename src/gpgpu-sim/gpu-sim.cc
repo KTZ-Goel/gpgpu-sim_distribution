@@ -1658,7 +1658,7 @@ int gpgpu_sim::next_clock_domain(void) {
       return mask;
   }
 
-  double smallest = min3(core_time, icnt_time, dram_time, memunit_time);
+  double smallest = min4(core_time, icnt_time, dram_time, memunit_time);
   int mask = 0x00;
   if (l2_time <= smallest) {
     smallest = l2_time;
