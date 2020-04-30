@@ -1713,7 +1713,9 @@ void gpgpu_sim::activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct
 {
   std::cout<<"\n\n Activate Prefetch called?";
   for(std::list<prefetch_req>::iterator iter = prefetch_buffer.begin(); iter!=prefetch_buffer.end(); iter++){
-      if(iter->start_addr == m_device_addr && iter->size == m_cnt && iter->m_stream->get_uid() == m_stream->get_uid()) {
+      //if(iter->start_addr == m_device_addr && iter->size == m_cnt && iter->m_stream->get_uid() == m_stream->get_uid()) {
+        if(iter->start_addr == m_device_addr && iter->size == m_cnt) 
+        {
         iter->active = true;
         return;
       }
