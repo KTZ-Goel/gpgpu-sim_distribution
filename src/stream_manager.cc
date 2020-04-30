@@ -239,6 +239,11 @@ void stream_manager::register_prefetch(size_t m_device_addr, size_t count, struc
     m_gpu->register_prefetch(m_device_addr, count, m_stream);
 }
 
+void stream_manager::activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
+{
+    m_gpu->activate_prefetch(m_device_addr, m_cnt, m_stream);
+}
+
 stream_manager::stream_manager(gpgpu_sim *gpu, bool cuda_launch_blocking) {
   m_gpu = gpu;
   m_service_stream_zero = false;
