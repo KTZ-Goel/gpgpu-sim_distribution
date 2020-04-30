@@ -1116,7 +1116,7 @@ __host__ cudaError_t CUDARTAPI cudaMemPrefetchAsyncInternal(const void *devPtr, 
 
 		ctx->the_gpgpusim->g_stream_manager->register_prefetch((size_t)gpuPtr, (size_t) count , s == NULL ? ctx->the_gpgpusim->g_stream_manager->get_stream_zero() : s );
 
-		ctx->the_gpgpusim->g_stream_manager->push( stream_operation((size_t)gpuPtr, count , s) );
+		ctx->the_gpgpusim->g_stream_manager->push( stream_operation((size_t)gpuPtr, count , s));
 
 	} else {
 		abort();

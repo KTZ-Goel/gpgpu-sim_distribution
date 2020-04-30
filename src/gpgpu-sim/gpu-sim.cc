@@ -1803,7 +1803,7 @@ void gpgpu_sim::memunit_cycle()
   }
   
   int k = 1;
-  do_prefetch();
+  //do_prefetch();
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);    
