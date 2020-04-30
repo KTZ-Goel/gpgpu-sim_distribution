@@ -1709,7 +1709,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
   return new_req_list;
 }
 
-void gpgpu_sim::activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
+void gpgpu_sim::activate_prefetch(size_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
 {
   std::cout<<"\n\n Activate Prefetch called?";
   for(std::list<prefetch_req>::iterator iter = prefetch_buffer.begin(); iter!=prefetch_buffer.end(); iter++){
