@@ -281,7 +281,7 @@ class stream_manager {
   unsigned size() { return m_streams.size(); };
   bool is_blocking() { return m_cuda_launch_blocking; };
   void register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream);
-  void activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
+  void activate_prefetch(mem_addr_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream);
   CUstream_st* get_stream_zero() { return &m_stream_zero; }
 
  private:
