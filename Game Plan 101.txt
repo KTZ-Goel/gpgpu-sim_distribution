@@ -77,5 +77,5 @@ Adding CudaMemPrefetchAsync:
 4. Activate the request in do_operation from the stream_manager (checksif the prefetch request belongs to the particular stream and schedules it)
 Done till 4
 
-5.
-6. Actually make it work
+5. activate prefetch called without stream access for now       Done 
+6. Prefetch working
