@@ -69,6 +69,7 @@
 #define WRITE_PACKET_SIZE 8
 
 #define WRITE_MASK_SIZE 8
+typedef address_type mem_addr_t;
 
 class gpgpu_context;
 
