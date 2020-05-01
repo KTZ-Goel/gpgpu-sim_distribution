@@ -1771,7 +1771,7 @@ void gpgpu_sim::do_prefetch()
           {
             page_latency_elem_t temp; 
             temp.page_addr = (*iter2);
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
             page_latency_queue.push_back(temp);
             iter2++;
             k++;
