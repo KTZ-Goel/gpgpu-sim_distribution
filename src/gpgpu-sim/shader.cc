@@ -2034,7 +2034,6 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   }  
   else
   {
-    std::cout<<"Else me aa gya \n";
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
     if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
@@ -2075,13 +2074,10 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
       stall_cond = process_managed_memory_access_queue(m_L1D);   // ADDED
     }
 
-    if (stall_cond == NO_RC_FAIL) 
+    if (stall_cond == NO_RC_FAIL)
     {
-      // CURRENTLY UNDefined
-    }
-    else
-    {
-      // Currently Undefined
+      mem_add_t page_num = m_gpu->get_global_memory()->get_page_num(mf->get_addr());
+      TLB_add(page_num);
     }
 
     return true; 
@@ -2340,6 +2336,8 @@ void ldst_unit::init(class gpgpu_sim* gpu,
   m_last_inst_gpu_tot_sim_cycle = 0;
 }
 
+#define TLB_SIZE 4096
+
 ldst_unit::ldst_unit(class gpgpu_sim* gpu,
                      mem_fetch_interface *icnt,
                      shader_core_mem_fetch_allocator *mf_allocator,
@@ -2349,6 +2347,7 @@ ldst_unit::ldst_unit(class gpgpu_sim* gpu,
                      unsigned sid, unsigned tpc)
     : pipelined_simd_unit(NULL, config, config->smem_latency, core),
       m_next_wb(config) {
+  tlb_max_size = TLB_SIZE;
   assert(config->smem_latency > 1);
   init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
        mem_config, stats, sid, tpc);
@@ -2513,6 +2512,34 @@ unsigned ldst_unit::clock_multiplier() const {
   else
     return m_config->mem_warp_parts;
 }
+
+void ldst_unit::TLB_evict(mem_addr_t page_num){
+  if(TLB_lookup(page_num))
+    TLB.remove(page_num);
+}
+
+bool ldst_unit::TLB_lookup(mem_addr_t page_num)
+{
+  return std::find(TLB.begin(), TLB.end(), page_num) != TLB.end();
+}
+
+void ldst_unit::TLB_add(mem_addr_t page_num)
+{
+  if(TLB_lookup(page_num))
+  {
+    // We remove the accessed page from TLB list and add it to the front (LRU)
+    TLB_evict(page_num);
+  }
+  else if(TLB.size() == tlb_max_size)
+  {
+    // If the requested page (page_num) is not already present then it needs to be added. 
+    // Pop the LRU value (front) and push the new page
+    TLB.pop_front();
+  }
+
+  TLB.push_back(page_num);
+}
+
 /*
 void ldst_unit::issue( register_set &reg_set )
 {
@@ -2559,11 +2586,16 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   }
   
   std::cout<<"\n Is a global access for a managed page";
-  std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(inst.accessq_back().get_addr(), inst.accessq_back().get_size());
-  if(page_list.empty()){   // Check if all pages are valid
-    // All pages was found in TLB/Page table and doesn't incur a page fault
-    std::cout<<"\nFound in Page table valid";
-    return true; 
+  // std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(inst.accessq_back().get_addr(), inst.accessq_back().get_size());
+  // if(page_list.empty()){   // Check if all pages are valid
+  //   // All pages was found in TLB/Page table and doesn't incur a page fault
+  //   std::cout<<"\nFound in Page table valid";
+  //   return true;
+  // }
+  if(TLB_lookup(page_no)){
+    // The page was already found in TLB. On TLB hit refresh the TLB and return true.
+    TLB_add(page_no);
+    return true;
   }
   else{
     mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_back(),
@@ -2571,22 +2603,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
                               m_core->get_gpu()->gpu_tot_sim_cycle);
     std::cout<<"\nGotto fetch from CPU - page fault";
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
-    m_core_cu_queue.push_back(mf);
-    //std::cout<<"\nPushed into core to cu queue";
-
-    // // Debug, assume, that the function is processed and returned, lets check here
-    
-    // std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-    // std::list<mem_addr_t>::iterator iter;
-    // for( iter = page_list.begin(); iter != page_list.end(); iter++)
-    // {
-    //     m_gpu->get_global_memory()->validate_page(*iter);
-    // }
-    // pop_core_cu_queue();
-    // m_cu_core_queue.push_back(mf);
-
-    // // Debug end
-    
+    m_core_cu_queue.push_back(mf);    
 
     // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
     inst.accessq_pop_back();

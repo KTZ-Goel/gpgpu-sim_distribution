@@ -1696,8 +1696,9 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFUALT_LATENCY 1000
-#define PER_PAGE_LATENCY 10
+#define DEFAULT_LATENCY 1000     // PCIE transfer latency
+#define PAGE_FAULT_LATENCY 66365    // Page fault latency
+#define PAGE_TABLE_LOOKUP 100
 bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
   std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
   return elem.page_addr == page_num;
@@ -1788,23 +1789,45 @@ void gpgpu_sim::memunit_cycle()
   std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
 
-  if(!latency_queue.empty()) 
+  if(!latency_queue.empty())
   {
     std::list<latency_elem_t>::iterator iter = latency_queue.begin();
     while(iter != latency_queue.end()) 
     {
-      mem_fetch* mf = (*iter).mf;
-      std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-      if(page_list.empty())   
-      {
-        std::cout<<"Now I am servicing mem access which is ready at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
-        getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
-        latency_queue.erase(iter++);
-      }
-      else
-      {
-        iter++;
-      }
+      if((*iter).ready_cycle <= (gpu_sim_cycle + gpu_tot_sim_cycle)){
+        mem_fetch* mf = (*iter).mf;
+        std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
+        if(page_list.empty())
+        {
+          // Found in Page Table (Page Table Hit)
+          std::cout<<"Found the page in Page Table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
+          getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
+          latency_queue.erase(iter++);
+        }
+        else if(!page_list.empty())
+        { 
+          int k = 1;
+          // The page was invalid in page_table - Requires to be fetched (page fault)
+          // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
+          // in the list
+          std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
+          if(!page_to_push.empty())
+          {
+            std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
+            while(iter2 != page_to_push.end())
+            {
+              page_latency_elem_t temp;
+              temp.page_addr = (*iter2);
+              temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
+              page_latency_queue.push_back(temp);
+              iter2++;
+              k++;
+            }
+          }
+
+          iter++;
+        }
+      } else iter++;
     }
   }
 
@@ -1821,9 +1844,10 @@ void gpgpu_sim::memunit_cycle()
       else iter++;
     }
   }
-  
-  int k = 1;
+
   do_prefetch();
+
+  // Process TLB misses
   for (unsigned int i=0; i<m_shader_config->n_simt_clusters; i++) 
   {
     SIMTCluster = getSIMTCluster(i);    
@@ -1834,25 +1858,8 @@ void gpgpu_sim::memunit_cycle()
       latency_elem_t p_t;
       p_t.mf = mf;
       p_t.simtClusterID = i;
+      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + PAGE_TABLE_LOOKUP;
       latency_queue.push_back(p_t); // stays in this queue till it is serviced on a page by page basis
-
-      // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
-      // in the list
-      std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-      std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
-      if(!page_to_push.empty())
-      {
-        std::list<mem_addr_t>::iterator iter = page_to_push.begin();
-        while(iter != page_to_push.end())
-        {
-          page_latency_elem_t temp; 
-          temp.page_addr = (*iter);
-          temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + DEFUALT_LATENCY + k*PER_PAGE_LATENCY;
-          page_latency_queue.push_back(temp);
-          iter++;
-          k++;
-        }
-      }
     }
   }
 }

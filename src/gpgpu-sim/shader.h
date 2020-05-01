@@ -1299,6 +1299,9 @@ class ldst_unit : public pipelined_simd_unit {
   void get_L1D_sub_stats(struct cache_sub_stats &css) const;
   void get_L1C_sub_stats(struct cache_sub_stats &css) const;
   void get_L1T_sub_stats(struct cache_sub_stats &css) const;
+  void TLB_add(mem_addr_t page_num);
+  bool TLB_lookup(mem_addr_t page_num);
+  void TLB_evict(mem_addr_t page_num);
 
  protected:
   ldst_unit(class gpgpu_sim* gpu,
@@ -1378,6 +1381,10 @@ class ldst_unit : public pipelined_simd_unit {
   // Two Queues for gmmu operations
   std::list<mem_fetch*> m_core_cu_queue;
   std::list<mem_fetch*> m_cu_core_queue;
+
+  // TLB List
+  std::list<mem_addr_t> TLB;
+  int tlb_max_size;
 
   std::vector<std::deque<mem_fetch *>> l1_latency_queue;
   void L1_latency_queue_cycle();
