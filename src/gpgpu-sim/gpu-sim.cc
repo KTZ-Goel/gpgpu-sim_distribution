@@ -1718,7 +1718,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
       if(std::find_if(page_latency_queue.begin(), page_latency_queue.end(), predicate) == page_latency_queue.end())
       {
         new_req_list.push_back(*iter);
-	      std::cout<<"\n new page request in... pushing to non_coal_list";
+	      //std::cout<<"\n new page request in... pushing to non_coal_list";
       }
   }
 
@@ -1771,7 +1771,7 @@ void gpgpu_sim::do_prefetch()
           {
             page_latency_elem_t temp; 
             temp.page_addr = (*iter2);
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
             page_latency_queue.push_back(temp);
             iter2++;
             k++;
@@ -1786,7 +1786,7 @@ void gpgpu_sim::do_prefetch()
 
 void gpgpu_sim::memunit_cycle()
 {  
-  std::cout<<"\nEntered Memunit cycle";
+  //std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
 
   if(!latency_queue.empty())
