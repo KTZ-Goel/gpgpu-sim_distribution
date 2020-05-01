@@ -2076,7 +2076,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
 
     if (stall_cond == NO_RC_FAIL)
     {
-      mem_add_t page_num = m_gpu->get_global_memory()->get_page_num(mf->get_addr());
+      mem_addr_t page_num = m_gpu->get_global_memory()->get_page_num(mf->get_addr());
       TLB_add(page_num);
     }
 
