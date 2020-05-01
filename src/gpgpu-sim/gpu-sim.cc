@@ -1696,8 +1696,8 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFAULT_LATENCY 1000     // PCIE transfer latency
-#define PAGE_FAULT_LATENCY 66365    // Page fault latency
+#define DEFAULT_LATENCY 10     // PCIE transfer latency
+#define PAGE_FAULT_LATENCY 1000    // Page fault latency
 #define PAGE_TABLE_LOOKUP 100
 bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
   //std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
