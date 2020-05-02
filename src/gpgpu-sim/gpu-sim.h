@@ -510,6 +510,7 @@ class gpgpu_sim : public gpgpu_t {
     CUstream_st *m_stream;
     bool active;
   };
+
   void do_prefetch();
   void refresh_page_call(mem_fetch *mf, bool addorremove);
   double get_rem_cycle(mem_addr_t page_num);
@@ -517,7 +518,7 @@ class gpgpu_sim : public gpgpu_t {
   std::list<page_valid_elem_t> get_victim_pages();
   void subtractCount(mem_addr_t addr);
   void addCount(mem_addr_t addr);
-  void register_TLBflush(std::function <void(mem_Addr_t)> core_TLB);
+  void register_TLBflush(std::function <void(mem_addr_t)> core_TLB);
   void TLB_shootdown(mem_addr_t page_num);
 
   mem_addr_t reserve_page();
@@ -532,7 +533,7 @@ class gpgpu_sim : public gpgpu_t {
   void init();
   void cycle();
   void memunit_cycle(); // This will be memory management cycle
-  static bool mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num);
+  static bool mshr_lookup(page_read_latency_elem_t &elem, mem_addr_t page_num);
   /**
    * \brief utility function to check whether the page request has already been raised
    */
@@ -718,7 +719,6 @@ class gpgpu_sim : public gpgpu_t {
   bool has_special_cache_config(std::string kernel_name);
   void change_cache_config(FuncCache cache_config);
   void set_cache_config(std::string kernel_name);
-  void refresh_page_call(mem_fetch *mf, bool addorremove);
 
   // Jin: functional simulation for CDP
  private:

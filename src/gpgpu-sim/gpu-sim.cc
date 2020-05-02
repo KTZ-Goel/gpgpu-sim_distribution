@@ -1705,7 +1705,7 @@ void gpgpu_sim::issue_block2core() {
 #define PAGE_FAULT_LATENCY 10000    // Page fault latency
 #define PAGE_TABLE_LOOKUP 100
 
-void gpgpu_sim::register_TLBflush(std::function <void(mem_Addr_t)> core_TLB){
+void gpgpu_sim::register_TLBflush(std::function <void(mem_addr_t)> core_TLB){
   TLBflush_list.push_back(core_TLB);
 }
 
@@ -1717,14 +1717,14 @@ void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
     }
 }
 
-bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
+bool gpgpu_sim::mshr_lookup(page_read_latency_elem_t &elem, mem_addr_t page_num){
   //std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
   return elem.page_addr == page_num;
 }
 
 std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
 
-  if(page_latency_read_queue.empty()) return page_list;
+  if(page_latency_queue_read.empty()) return page_list;
   if(page_list.empty()) return page_list;
 
   std::list<mem_addr_t> new_req_list;
@@ -1733,7 +1733,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
   for( iter = page_list.begin(); iter != page_list.end(); iter++)
   {
       auto predicate = std::bind(mshr_lookup, std::placeholders::_1, *iter);
-      if(std::find_if(page_latency_read_queue.begin(), page_latency_read_queue.end(), predicate) == page_latency_read_queue.end())
+      if(std::find_if(page_latency_read_queue.begin(), page_latency_queue_read.end(), predicate) == page_latency_queue_read.end())
       {
         new_req_list.push_back(*iter);
 	      //std::cout<<"\n new page request in... pushing to non_coal_list";
