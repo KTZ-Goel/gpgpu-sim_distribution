@@ -206,7 +206,7 @@ class memory_space_impl : public memory_space {
   virtual bool is_page_dirty(mem_addr_t addr, size_t length);
 
   // Method to set the page as dirty
-  virtual void set_page_dirty( mem_addr_t addr);
+  virtual void set_page_dirty( mem_addr_t addr, size_t length);
 
   // Methods to check page table(m_data) and make some changes
    virtual void	validate_page	(mem_addr_t pg_index);

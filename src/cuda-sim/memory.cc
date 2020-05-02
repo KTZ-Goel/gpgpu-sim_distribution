@@ -287,21 +287,21 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_pag
   return page_list;
 }
 
-template<unsigned BSIZE> bool memory_space_impl<BSIZE>::get_access_cnt (mem_addr_t pg_index)
+template<unsigned BSIZE> int memory_space_impl<BSIZE>::get_access_cnt (mem_addr_t pg_index)
 {
    // asserts whether the physical page is allocated. 
    // should never happen as they are allocated while memcpy.
    return m_data[pg_index].get_access_cnt();
 }
 
-template<unsigned BSIZE> bool memory_space_impl<BSIZE>::increase_access (mem_addr_t pg_index)
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::increase_access (mem_addr_t pg_index)
 {
    // asserts whether the physical page is allocated. 
    // should never happen as they are allocated while memcpy.
    return m_data[pg_index].increase_access();
 }
 
-template<unsigned BSIZE> bool memory_space_impl<BSIZE>::decrease_access (mem_addr_t pg_index)
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::decrease_access (mem_addr_t pg_index)
 {
    // asserts whether the physical page is allocated. 
    // should never happen as they are allocated while memcpy.
