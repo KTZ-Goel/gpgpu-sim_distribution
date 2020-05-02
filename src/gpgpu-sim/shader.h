@@ -2113,6 +2113,10 @@ class shader_core_ctx : public core_t {
   }
   bool check_if_non_released_reduction_barrier(warp_inst_t &inst);
 
+  void TLBFlush(mem_addr_t page_num){
+    m_ldst_unit->TLBflush(page_num);
+  }
+  
  private:
   unsigned inactive_lanes_accesses_sfu(unsigned active_count, double latency) {
     return (((32 - active_count) >> 1) * latency) +
@@ -2298,6 +2302,8 @@ class simt_core_cluster {
   void get_icnt_stats(long &n_simt_to_mem, long &n_mem_to_simt) const;
   float get_current_occupancy(unsigned long long &active,
                               unsigned long long &total) const;
+
+  void TLBflush(mem_addr_t page_num);
 
  private:
   unsigned m_cluster_id;

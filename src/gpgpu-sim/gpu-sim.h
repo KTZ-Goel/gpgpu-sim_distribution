@@ -521,7 +521,7 @@ class gpgpu_sim : public gpgpu_t {
   //std::list<page_valid_elem_t> get_victim_pages();
   void subtractCount(mem_addr_t addr);
   void addCount(mem_addr_t addr);
-  void register_TLBflush(std::function <void(mem_addr_t)> core_TLB);
+  //void register_TLBflush(std::function <void(mem_addr_t)> core_TLB);
   void TLB_shootdown(mem_addr_t page_num);
 
   mem_addr_t reserve_page();

@@ -4390,6 +4390,11 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
 }
 #define DEFUALT_LATENCY 2
 
+void simt_core_cluster::TLBflush(mem_addr_t page_num){
+  for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++)
+    m_core[i].TLBflush(page_num);
+}
+
 void simt_core_cluster::icnt_cycle() {
 
     // pop from upward queue (GMMU to CU) of cluster and push it to the one in core (SM/CU)
