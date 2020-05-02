@@ -1719,7 +1719,7 @@ void gpgpu_sim::issue_block2core() {
 
 void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
-      m_cluster[i]->TLBflush();
+      m_cluster[i]->TLBflush(page_num);
 }
 
 bool gpgpu_sim::mshr_lookup(page_read_latency_elem_t &elem, mem_addr_t page_num){
