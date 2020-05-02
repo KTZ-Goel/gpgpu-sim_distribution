@@ -1701,9 +1701,9 @@ void gpgpu_sim::issue_block2core() {
 
 // Methods for corresponding memory unit start now
 
-#define DEFAULT_LATENCY 1000     // PCIE transfer latency
-#define PAGE_FAULT_LATENCY 10000    // Page fault latency
-#define PAGE_TABLE_LOOKUP 100
+#define DEFAULT_LATENCY 10     // PCIE transfer latency
+#define PAGE_FAULT_LATENCY 100    // Page fault latency
+#define PAGE_TABLE_LOOKUP 10
 
 void gpgpu_sim::register_TLBflush(std::function <void(mem_addr_t)> core_TLB){
   TLBflush_list.push_back(core_TLB);
