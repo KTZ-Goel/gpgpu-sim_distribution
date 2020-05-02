@@ -1954,8 +1954,10 @@ void gpgpu_sim::memunit_cycle()
             {
               // Check each page whether it exit in write queue, if it does, then change the latency
               // Check whether there is non zero free pages, in that case just push it and update the page table and num
-              if(numoffreepages)
+              if(numoffreepages){
                 numoffreepages--;
+                std::cout<<"A page is used Currently the number of pages are"<<numoffreepages<<std::endl;
+              }
               else 
               {
                 mem_addr_t evicted ;
@@ -1965,6 +1967,7 @@ void gpgpu_sim::memunit_cycle()
                   std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
                   break;
                 }
+                 std::cout<<"A page is evicted page Num"<<evicted<<std::endl;
 
                 // TLB Flush
                 TLB_shootdown(evicted);
