@@ -1733,7 +1733,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
   for( iter = page_list.begin(); iter != page_list.end(); iter++)
   {
       auto predicate = std::bind(mshr_lookup, std::placeholders::_1, *iter);
-      if(std::find_if(page_latency_read_queue.begin(), page_latency_queue_read.end(), predicate) == page_latency_queue_read.end())
+      if(std::find_if(page_latency_queue_read.begin(), page_latency_queue_read.end(), predicate) == page_latency_queue_read.end())
       {
         new_req_list.push_back(*iter);
 	      //std::cout<<"\n new page request in... pushing to non_coal_list";
