@@ -1886,11 +1886,11 @@ double gpgpu_sim::get_rem_cycle(mem_addr_t page_num){
 
   while(iter != page_latency_queue_write.end()){
     if(iter->page_addr == page_num)
-      break;
+      return (iter->ready_cycle - (gpu_sim_cycle + gpu_tot_sim_cycle));
     iter++;
   }
   
-  return iter->ready_cycle - (gpu_sim_cycle + gpu_tot_sim_cycle);
+  return 0;
 }
 
 void gpgpu_sim::refresh_page_call(mem_fetch *mf, bool addorremove)
