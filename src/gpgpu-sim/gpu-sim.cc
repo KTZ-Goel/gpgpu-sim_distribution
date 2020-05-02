@@ -1872,6 +1872,7 @@ mem_addr_t gpgpu_sim::reserve_page()
   {
     if(iter->count == 0)
     {
+      valid_page_list.remove(*iter);
       return iter->page_addr;
     }
     iter++;
