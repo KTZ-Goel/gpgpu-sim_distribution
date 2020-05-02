@@ -1724,7 +1724,7 @@ void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
 }
 
 bool gpgpu_sim::mshr_lookup(page_read_latency_elem_t &elem, mem_addr_t page_num){
-  std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
+  //std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
   return elem.page_addr == page_num;
 }
 
