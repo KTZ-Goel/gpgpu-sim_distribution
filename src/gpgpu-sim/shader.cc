@@ -2619,7 +2619,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   }
   else{
     
-    std::cout<<"\nGotto fetch from CPU - page fault on page "<<page_no;
+    //std::cout<<"\nGotto fetch from CPU - page fault on page "<<page_no;
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);    
 
