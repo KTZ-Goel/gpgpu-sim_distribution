@@ -1766,7 +1766,7 @@ void gpgpu_sim::register_prefetch(size_t m_device_addr, size_t count, struct CUs
     pre_q.m_stream = m_stream;
     prefetch_buffer.push_back(pre_q);
 }
-
+/*
 void gpgpu_sim::do_prefetch()
 {
   // check if there is anything in the prefetch cycle
@@ -1800,7 +1800,7 @@ void gpgpu_sim::do_prefetch()
       else iter++;
     }
   }
-}
+}*/
 
 void gpgpu_sim::addCount(mem_addr_t addr)
 {
