@@ -1852,7 +1852,7 @@ mem_addr_t gpgpu_sim::reserve_page(){
     return 0;
   
   page_valid_elem_t victim = get_victim_pages().front();
-  valid_page_list.remove(victim);
+  valid_page_list.erase(victim);
   
   return victim.page_addr;
 }
