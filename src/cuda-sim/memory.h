@@ -217,9 +217,9 @@ class memory_space_impl : public memory_space {
    virtual mem_addr_t get_mem_addr(mem_addr_t pg_index);
    virtual bool is_valid (mem_addr_t pg_index);
    // Access counter per page
-   virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
-   virtual void	increase_access	(mem_addr_t pg_index) = 0;
-   virtual void	decrease_access	(mem_addr_t pg_index) = 0;
+   virtual int	get_access_cnt	(mem_addr_t pg_index);
+   virtual void	increase_access	(mem_addr_t pg_index);
+   virtual void	decrease_access	(mem_addr_t pg_index);
 
  private:
   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
