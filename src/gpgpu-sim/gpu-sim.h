@@ -501,7 +501,7 @@ class gpgpu_sim : public gpgpu_t {
   {
     mem_addr_t page_addr;
     int count;
-  }
+  };
 
   struct prefetch_req 
   {
