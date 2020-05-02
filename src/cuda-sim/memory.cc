@@ -128,7 +128,7 @@ template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_dirty(mem_addr_t
 template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_page_dirty(mem_addr_t addr, size_t length)
 {
   mem_addr_t page_index   = get_page_num (addr+length-1);
-  return m_data[page_index].is_managed();
+  m_data[page_index].set_dirty();
 }
 
 template <unsigned BSIZE>
