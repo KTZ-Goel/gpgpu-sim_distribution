@@ -1717,7 +1717,7 @@ void gpgpu_sim::issue_block2core() {
 //     }
 // }
 
-void gpgu_sim::TLB_shootdown(mem_addr_t page_num){
+void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
       m_cluster[i]->TLBflush();
 }
