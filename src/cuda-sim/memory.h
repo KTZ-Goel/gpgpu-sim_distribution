@@ -174,6 +174,7 @@ class memory_space {
    virtual mem_addr_t get_page_num (mem_addr_t addr) = 0;
    virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
    virtual bool is_valid (mem_addr_t pg_index) = 0;
+   virtual std::list<mem_addr_t> get_pages(mem_addr_t addr, size_t length) = 0;
 
    // Access counter per page
    virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
