@@ -1839,7 +1839,7 @@ std::list<page_valid_elem_t> gpgpu_sim::get_victim_pages()
   {
     if(iter->count == 0)
     {
-      temp.push_back(iter);
+      temp.push_back(*iter);
     }
     iter++;
   }
