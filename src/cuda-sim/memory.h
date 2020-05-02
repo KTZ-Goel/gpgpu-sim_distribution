@@ -113,12 +113,24 @@ class mem_storage {
     valid = false;
   }
 
+  void set_dirty(){
+    dirty = true;
+  }
+
+  bool is_dirty(){
+    return dirty;
+
+  void set_clean(){
+    dirty = false;
+  }
+  }
 private:
   unsigned m_nbytes;
   unsigned char *m_data;
 
   bool managed;
   bool valid;
+  bool dirty;
 
 };
 
@@ -172,11 +184,18 @@ class memory_space_impl : public memory_space {
 
   // Method to set the page as managed
   virtual void set_pages_managed( mem_addr_t addr, size_t length);
+  
+  // Method to find if the page is dirty
+  virtual bool is_page_dirty(mem_addr_t addr, size_t length);
+
+  // Method to set the page as dirty
+  virtual void set_page_dirty( mem_addr_t addr);
 
   // Methods to check page table(m_data) and make some changes
    virtual void	validate_page	(mem_addr_t pg_index);
    virtual void	invalidate_page	(mem_addr_t pg_index);
    virtual std::list<mem_addr_t> get_faulty_pages(mem_addr_t addr, size_t length);
+   virtual std::list<mem_addr_t> get_pages(mem_addr_t addr, size_t length);
    virtual mem_addr_t get_page_num (mem_addr_t addr);
    virtual mem_addr_t get_mem_addr(mem_addr_t pg_index);
    virtual bool is_valid (mem_addr_t pg_index);

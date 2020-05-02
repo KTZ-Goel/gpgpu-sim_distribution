@@ -84,3 +84,10 @@ Done till 4
 
 5. activate prefetch called without stream access for now       Done 
 6. Prefetch working
+
+7. TLB added
+8. Living in 2050 now : Adding Page Eviction for Page Table and Page size
+
+    To Be done :  add TLB_shootdown
+                    shader.cc tlb and refresh
+                    check existin pages in write queue and bring back if ready 0

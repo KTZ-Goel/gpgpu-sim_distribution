@@ -119,6 +119,18 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_managed( mem_a
   }
 }
 
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_dirty(mem_addr_t addr, size_t length)
+{
+  mem_addr_t page_index   = get_page_num (addr+length-1);
+  return m_data[page_index].is_dirty();
+}
+
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_page_dirty(mem_addr_t addr, size_t length)
+{
+  mem_addr_t page_index   = get_page_num (addr+length-1);
+  return m_data[page_index].is_managed();
+}
+
 template <unsigned BSIZE>
 void memory_space_impl<BSIZE>::read_single_block(mem_addr_t blk_idx,
                                                  mem_addr_t addr, size_t length,
@@ -260,6 +272,20 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_fau
   return page_list;
 }
 
+template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_pages (mem_addr_t addr, size_t length)
+{
+  std::list<mem_addr_t> page_list;
+
+  mem_addr_t start_page = get_page_num (addr);
+  mem_addr_t end_page   = get_page_num (addr+length-1);
+  
+  while(start_page <= end_page) {
+    page_list.push_back(start_page);  
+    start_page++;
+  }
+
+  return page_list;
+}
 
 #ifdef UNIT_TEST
 

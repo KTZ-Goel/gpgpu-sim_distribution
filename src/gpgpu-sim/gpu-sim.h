@@ -485,11 +485,23 @@ class gpgpu_sim : public gpgpu_t {
     int simtClusterID;
     double ready_cycle;
   };
-  struct page_latency_elem_t
+  struct page_read_latency_elem_t
   {
     mem_addr_t page_addr;
     unsigned long long ready_cycle;
   };
+
+  struct page_write_latency_elem_t
+  {
+    mem_addr_t page_addr;
+    unsigned long long ready_cycle;
+  };
+
+  struct page_valid_elem_t
+  {
+    mem_addr_t page_addr;
+    int count;
+  }
 
   struct prefetch_req 
   {
@@ -501,7 +513,7 @@ class gpgpu_sim : public gpgpu_t {
   void do_prefetch();
 
   void set_prop(struct cudaDeviceProp *prop);
-
+  
   void launch(kernel_info_t *kinfo);
   void register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream);
   void activate_prefetch(size_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream);
@@ -607,8 +619,9 @@ class gpgpu_sim : public gpgpu_t {
 
   void gpgpu_debug();
 
-  std::list<page_latency_elem_t> page_latency_queue;
-   
+  std::list<page_read_latency_elem_t> page_latency_queue_read;   // Read Latency queue
+  std::list<page_write_latency_elem_t> page_latency_queue_write;  // Write latency queue
+  std::list<page_valid_elem_t> valid_page_list;
   std::list<latency_elem_t> latency_queue;
 
   std::list<prefetch_req> prefetch_buffer;   // Prefetch request buffer
@@ -696,6 +709,7 @@ class gpgpu_sim : public gpgpu_t {
   bool has_special_cache_config(std::string kernel_name);
   void change_cache_config(FuncCache cache_config);
   void set_cache_config(std::string kernel_name);
+  void refresh_page_call(latency_elem_t iter, bool addorremove);
 
   // Jin: functional simulation for CDP
  private:
