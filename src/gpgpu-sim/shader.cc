@@ -4392,7 +4392,7 @@ void simt_core_cluster::icnt_inject_request_packet(class mem_fetch *mf) {
 
 void simt_core_cluster::TLBflush(mem_addr_t page_num){
   for (unsigned i=0; i < m_config->n_simt_cores_per_cluster; i++)
-    m_core[i].TLBflush(page_num);
+    m_core[i]->TLBflush(page_num);
 }
 
 void simt_core_cluster::icnt_cycle() {
