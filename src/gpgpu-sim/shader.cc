@@ -2034,6 +2034,9 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
   }  
   else
   {
+    m_mf_allocator->alloc(inst, access,
+                                  m_core->get_gpu()->gpu_sim_cycle +
+                                      m_core->get_gpu()->gpu_tot_sim_cycle);
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
     if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
