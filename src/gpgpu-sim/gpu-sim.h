@@ -518,7 +518,7 @@ class gpgpu_sim : public gpgpu_t {
   void refresh_page_call(mem_fetch *mf, bool addorremove);
   double get_rem_cycle(mem_addr_t page_num);
   void set_prop(struct cudaDeviceProp *prop);
-  std::list<page_valid_elem_t> get_victim_pages();
+  //std::list<page_valid_elem_t> get_victim_pages();
   void subtractCount(mem_addr_t addr);
   void addCount(mem_addr_t addr);
   void register_TLBflush(std::function <void(mem_addr_t)> core_TLB);

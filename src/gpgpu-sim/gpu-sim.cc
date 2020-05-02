@@ -1831,6 +1831,7 @@ void gpgpu_sim::subtractCount(mem_addr_t addr)
   }  
 }
 
+/*
 std::list<page_valid_elem_t> gpgpu_sim::get_victim_pages()
 {
   std::list<page_valid_elem_t>::iterator iter = valid_page_list.begin();
@@ -1855,7 +1856,24 @@ mem_addr_t gpgpu_sim::reserve_page(){
   valid_page_list.remove(victim);
   
   return victim.page_addr;
+}*/
+
+mem_addr_t gpgpu_sim::reserve_page()
+{
+  std::list<page_valid_elem_t>::iterator iter = valid_page_list.begin();
+  std::list<page_valid_elem_t> temp;
+  while(iter != valid_page_list.end())
+  {
+    if(iter->count == 0)
+    {
+      return iter->page_addr;
+    }
+    iter++;
+  }
+  return 0;
 }
+
+
 
 double gpgpu_sim::get_rem_cycle(mem_addr_t page_num){
   std::list<page_write_latency_elem_t>::iterator iter = page_latency_queue_write.begin();
