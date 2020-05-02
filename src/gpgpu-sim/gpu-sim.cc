@@ -1858,7 +1858,7 @@ mem_addr_t gpgpu_sim::reserve_page(){
 }
 
 double gpgpu_sim::get_rem_cycle(mem_addr_t page_num){
-  std::list<page_write_latency_elem_t> iter = page_latency_queue_write.begin();
+  std::list<page_write_latency_elem_t>::iterator iter = page_latency_queue_write.begin();
 
   while(iter != page_latency_queue_write.end()){
     if(iter->page_addr == page_num)

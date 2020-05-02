@@ -70,6 +70,14 @@ extern tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 
 enum dram_ctrl_t { DRAM_FIFO = 0, DRAM_FRFCFS = 1 };
 
+
+struct page_valid_elem_t
+{
+  mem_addr_t page_addr;
+  int count;
+};
+
+
 struct power_config {
   power_config() { m_valid = true; }
   void init() {
@@ -496,12 +504,6 @@ class gpgpu_sim : public gpgpu_t {
   {
     mem_addr_t page_addr;
     unsigned long long ready_cycle;
-  };
-
-  struct page_valid_elem_t
-  {
-    mem_addr_t page_addr;
-    int count;
   };
 
   struct prefetch_req 
