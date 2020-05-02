@@ -1718,6 +1718,7 @@ void gpgpu_sim::issue_block2core() {
 // }
 
 void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
+  std::cout<<"\n\n TLB Shootdown : "<<page_num;
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
       m_cluster[i]->TLBflush(page_num);
 }
@@ -1931,7 +1932,7 @@ void gpgpu_sim::memunit_cycle()
         {
           // Found in Page Table (Page Table Hit)
           //refresh_page_call(*iter, false);
-          std::cout<<"Found the page in Page Table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
+          std::cout<<"All pages found in page table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
           getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
           latency_queue.erase(iter++);
         }
@@ -1960,7 +1961,10 @@ void gpgpu_sim::memunit_cycle()
                 mem_addr_t evicted ;
                 evicted = reserve_page();
                 if(!evicted)
+                {
+                  std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
                   break;
+                }
 
                 // TLB Flush
                 TLB_shootdown(evicted);
