@@ -79,7 +79,7 @@ class gpgpu_sim_wrapper {};
 #include <string>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define MAX_NUM_FREE_PAGES 134144
+#define MAX_NUM_FREE_PAGES 32
 
 
 bool g_interactive_debugger_enabled = false;
