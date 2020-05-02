@@ -1989,7 +1989,7 @@ void gpgpu_sim::memunit_cycle()
 
   if(!page_latency_queue_write.empty())
   {
-    std::list<page_read_latency_elem_t>::iterator iter = page_latency_queue_write.begin();
+    std::list<page_write_latency_elem_t>::iterator iter = page_latency_queue_write.begin();
     while(iter != page_latency_queue_write.end()) 
     {
       if((*iter).ready_cycle <= gpu_sim_cycle + gpu_tot_sim_cycle) // page is ready
