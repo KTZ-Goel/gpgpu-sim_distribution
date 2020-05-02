@@ -2028,15 +2028,18 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
         access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
       else
         access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
-    } else m_gpu->refresh_page_call(mf, false);
+    } else {
+      mem_fetch *mf =
+            m_mf_allocator->alloc(inst, access,
+                                  m_core->get_gpu()->gpu_sim_cycle +
+                                      m_core->get_gpu()->gpu_tot_sim_cycle);
+      m_gpu->refresh_page_call(mf, false);
+    }
     return inst.accessq_empty();
     
   }  
   else
   {
-    m_mf_allocator->alloc(inst, access,
-                                  m_core->get_gpu()->gpu_sim_cycle +
-                                      m_core->get_gpu()->gpu_tot_sim_cycle);
     mem_fetch *mf = m_cu_core_queue.front();
     bool bypassL1D = false; 
     if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
@@ -2335,14 +2338,14 @@ void ldst_unit::init(class gpgpu_sim* gpu,
                               IN_L1C_MISS_QUEUE);
   m_L1D = NULL;
   m_mem_rc = NO_RC_FAIL;
-  m_num_writeback_clients =
-      5;  // = shared memory, global/local (uncached), L1D, L1T, L1C
+  m_num_writeback_clients = 5;  // = shared memory, global/local (uncached), L1D, L1T, L1C
   m_writeback_arb = 0;
   m_next_global = NULL;
   m_last_inst_gpu_sim_cycle = 0;
   m_last_inst_gpu_tot_sim_cycle = 0;
 
-  gpu->register_TLBflush([this](mem_addr_t addr) {return TLBflush(addr);});
+  gpu->register_TLBflush (this->TLBflush);
+  //gpu->getGmmu()->register_tlbflush_callback([this](mem_addr_t addr) { return invalidate_tlb(addr); });
 }
 
 #define TLB_SIZE 4096
