@@ -1851,8 +1851,8 @@ mem_addr_t gpgpu_sim::reserve_page(){
   if(get_victim_pages().empty())
     return 0;
   
-  page_valid_elem_t *victim = get_victim_pages().front();
-  valid_page_list.erase(*victim);
+  page_valid_elem_t victim = get_victim_pages().front();
+  valid_page_list.remove(victim);
   
   return victim.page_addr;
 }
