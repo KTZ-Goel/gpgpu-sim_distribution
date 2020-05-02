@@ -1867,17 +1867,18 @@ mem_addr_t gpgpu_sim::reserve_page(){
 mem_addr_t gpgpu_sim::reserve_page()
 {
   std::list<page_valid_elem_t>::iterator iter = valid_page_list.begin();
-  std::list<page_valid_elem_t> temp;
+  mem_addr_t tmp = 0;
   while(iter != valid_page_list.end())
   {
     if(iter->count == 0)
     {
-      valid_page_list.erase(*iter);
-      return iter->page_addr;
+      tmp = iter->page_addr;
+      valid_page_list.erase(iter++);
+      break;
     }
     iter++;
   }
-  return 0;
+  return tmp;
 }
 
 
