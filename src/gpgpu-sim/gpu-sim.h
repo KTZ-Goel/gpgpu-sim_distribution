@@ -511,9 +511,16 @@ class gpgpu_sim : public gpgpu_t {
     bool active;
   };
   void do_prefetch();
-
+  void refresh_page_call(mem_fetch *mf, bool addorremove);
+  double get_rem_cycle(mem_addr_t page_num);
   void set_prop(struct cudaDeviceProp *prop);
-  
+  std::list<page_valid_elem_t> get_victim_pages();
+  void subtractCount(mem_addr_t addr);
+  void addCount(mem_addr_t addr);
+  void register_TLBflush(std::function <void(mem_Addr_t)> core_TLB);
+  void TLB_shootdown(mem_addr_t page_num);
+
+  mem_addr_t reserve_page();
   void launch(kernel_info_t *kinfo);
   void register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream);
   void activate_prefetch(size_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream);
@@ -606,6 +613,7 @@ class gpgpu_sim : public gpgpu_t {
 
  private:
   // clocks
+  int numoffreepages;
   void reinit_clock_domains(void);
   int next_clock_domain(void);
   void issue_block2core();
@@ -625,7 +633,8 @@ class gpgpu_sim : public gpgpu_t {
   std::list<latency_elem_t> latency_queue;
 
   std::list<prefetch_req> prefetch_buffer;   // Prefetch request buffer
-
+  // callback functions to invalidate the tlb in ldst unit
+  std::list<std::function<void(mem_addr_t)> > TLBflush_list;
   ///// data /////
 
   class simt_core_cluster **m_cluster;
@@ -709,7 +718,7 @@ class gpgpu_sim : public gpgpu_t {
   bool has_special_cache_config(std::string kernel_name);
   void change_cache_config(FuncCache cache_config);
   void set_cache_config(std::string kernel_name);
-  void refresh_page_call(latency_elem_t iter, bool addorremove);
+  void refresh_page_call(mem_fetch *mf, bool addorremove);
 
   // Jin: functional simulation for CDP
  private:

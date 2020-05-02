@@ -79,6 +79,8 @@ class gpgpu_sim_wrapper {};
 #include <string>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MAX_NUM_FREE_PAGES 134144
+
 
 bool g_interactive_debugger_enabled = false;
 
@@ -803,6 +805,7 @@ gpgpu_sim::gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
   gpu_tot_sim_cycle_parition_util = 0;
   partiton_replys_in_parallel = 0;
   partiton_replys_in_parallel_total = 0;
+  numoffreepages = MAX_NUM_FREE_PAGES;
 
   m_cluster = new simt_core_cluster *[m_shader_config->n_simt_clusters];
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
@@ -1696,9 +1699,24 @@ void gpgpu_sim::issue_block2core() {
   }
 }
 
-#define DEFAULT_LATENCY 10     // PCIE transfer latency
-#define PAGE_FAULT_LATENCY 1000    // Page fault latency
+// Methods for corresponding memory unit start now
+
+#define DEFAULT_LATENCY 1000     // PCIE transfer latency
+#define PAGE_FAULT_LATENCY 10000    // Page fault latency
 #define PAGE_TABLE_LOOKUP 100
+
+void gpgpu_sim::register_TLBflush(std::function <void(mem_Addr_t)> core_TLB){
+  TLBflush_list.push_back(core_TLB);
+}
+
+void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
+  std::cout<<"\n\n TLB Shootdown : "<<page_num;
+  for( list<std::function<void(mem_addr_t)>>::iterator iter = TLBflush_list.begin();
+    iter != TLBflush_list.end(); iter++){
+      (*iter)(page_num);
+    }
+}
+
 bool gpgpu_sim::mshr_lookup(page_latency_elem_t &elem, mem_addr_t page_num){
   //std::cout<<"\nComparing in mshr "<<elem.page_addr<<" and "<<page_num<<" will be ready at : "<<elem.ready_cycle;
   return elem.page_addr == page_num;
@@ -1771,7 +1789,7 @@ void gpgpu_sim::do_prefetch()
           {
             page_latency_elem_t temp; 
             temp.page_addr = (*iter2);
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(2*DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
             page_latency_queue.push_back(temp);
             iter2++;
             k++;
@@ -1825,12 +1843,13 @@ std::list<page_valid_elem_t> gpgpu_sim::get_victim_pages()
     }
     iter++;
   }
+  return temp;
 }
 
 mem_addr_t gpgpu_sim::reserve_page(){
   
   if(get_victim_pages().empty())
-    return numoffreepages;
+    return 0;
   
   page_valid_elem_t victim = get_victim_pages().front();
   valid_page_list.remove(victim);
@@ -1850,17 +1869,23 @@ double gpgpu_sim::get_rem_cycle(mem_addr_t page_num){
   return iter->ready_cycle - (gpu_sim_cycle + gpu_tot_sim_cycle);
 }
 
-void gpgpu_sim::refresh_page_call(latency_elem_t iter, bool addorremove)
+void gpgpu_sim::refresh_page_call(mem_fetch *mf, bool addorremove)
 {
-    mem_fetch *mf = iter.mf; 
+    // mem_fetch *mf = iter.mf;
     std::list<mem_addr_t> page_list = get_global_memory()->get_pages(mf->get_addr(), mf->get_access_size());
-    std::list<page_read_latency_elem_t>::iterator iter = page_list.begin();
+    std::list<mem_addr_t>::iterator iter = page_list.begin();
     while(iter != page_list.end()) 
     {
       if(addorremove)
-      addCount((*iter).page_addr);  
+      {
+        addCount(*iter); 
+        get_global_memory()->increase_access(mf->get_addr());
+      } 
       else
-      subtractCount((*iter).page_addr);  
+      {
+        subtractCount(*iter);  
+        get_global_memory()->decrease_access(mf->get_addr());
+      }
       iter++;
     }
 }
@@ -1870,20 +1895,7 @@ void gpgpu_sim::memunit_cycle()
   //std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
   
-  do_prefetch();
-
-  if(!page_latency_queue_write.empty())
-  {
-    std::list<page_write_latency_elem_t>::iterator iter = page_latency_queue_write.begin();
-    while(iter != page_latency_queue_write.end())
-    {
-      if(!iter->ready_cycle)
-        iter->ready_cycle = 
-        get_global_memory()->invalidate_page(iter->page_addr);
-        //TLB shootdown -- 
-    }
-  }
-
+  //do_prefetch();
   if(!latency_queue.empty())
   {
     std::list<latency_elem_t>::iterator iter = latency_queue.begin();
@@ -1895,6 +1907,7 @@ void gpgpu_sim::memunit_cycle()
         if(page_list.empty())
         {
           // Found in Page Table (Page Table Hit)
+          //refresh_page_call(*iter, false);
           std::cout<<"Found the page in Page Table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
           getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
           latency_queue.erase(iter++);
@@ -1902,7 +1915,7 @@ void gpgpu_sim::memunit_cycle()
         else if(!page_list.empty())
         { 
           // The current instruction is not done yet, make all the pages busy
-          refresh_page_call(*iter, true);    
+          //refresh_page_call(*iter, true);    
           int k = 1;
           // The page was invalid in page_table - Requires to be fetched (page fault)
           // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
@@ -1911,43 +1924,48 @@ void gpgpu_sim::memunit_cycle()
           if(!page_to_push.empty())
           {
             std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
+            int k2 = 0;
+  
             while(iter2 != page_to_push.end())
             {
               // Check each page whether it exit in write queue, if it does, then change the latency
-
               // Check whether there is non zero free pages, in that case just push it and update the page table and num
-
               if(numoffreepages)
                 numoffreepages--;
               else 
               {
                 mem_addr_t evicted ;
                 evicted = reserve_page();
-                if(!evicted())
+                if(!evicted)
                   break;
-                
-                // Push the evicted page to the write queue
-                
-                // Update TLB 
 
-                page_latency_queue_write temp;
+                // TLB Flush
+                TLB_shootdown(evicted);
+                // Push the evicted page to the write queue
+                page_write_latency_elem_t temp;
                 temp.page_addr = evicted;
-                temp.ready_cycle = 0;
+                temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(DEFAULT_LATENCY);
+                get_global_memory()->invalidate_page(evicted);
                 page_latency_queue_write.push_back(temp);
               }  
-
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
-              temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
+              temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
               page_latency_queue_read.push_back(temp);
               iter2++;
               k++;             
             }
+            //(*iter).ready_cycle = temp.ready_cycle;
           }
 
           iter++;
         }
-      } else iter++;
+      } 
+      else 
+      {
+        iter++;
+        //refresh_page_call((*iter).mf, true); 
+      }
     }
   }
 
@@ -1959,7 +1977,11 @@ void gpgpu_sim::memunit_cycle()
       if((*iter).ready_cycle <= gpu_sim_cycle + gpu_tot_sim_cycle) // page is ready
       {
          get_global_memory()->validate_page((*iter).page_addr);  // validate the page0
-         page_latency_queue_read.erase(iter++);
+         page_latency_queue_read.erase(iter++);     // Erase the queue
+         struct page_valid_elem_t p_t; 
+         p_t.count = get_global_memory()->get_access_cnt((*iter).page_addr);  // Push how many instruction are there
+         p_t.page_addr = (*iter).page_addr;         
+         valid_page_list.push_back(p_t); // The read command has returned now push the new page in the list
       }
       else iter++;
     }

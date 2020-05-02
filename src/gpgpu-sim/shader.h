@@ -1303,7 +1303,7 @@ class ldst_unit : public pipelined_simd_unit {
   void TLB_add(mem_addr_t page_num);
   bool TLB_lookup(mem_addr_t page_num);
   void TLB_evict(mem_addr_t page_num);
-
+  void TLBflush(mem_addr_t page_num);
  protected:
   ldst_unit(class gpgpu_sim* gpu,
             mem_fetch_interface *icnt,

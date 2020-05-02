@@ -2028,7 +2028,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
         access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
       else
         access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
-    }
+    } else m_gpu->refresh_page_call(mf, false);
     return inst.accessq_empty();
     
   }  
@@ -2078,6 +2078,10 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
     {
       mem_addr_t page_num = m_gpu->get_global_memory()->get_page_num(mf->get_addr());
       TLB_add(page_num);
+
+      //Clear the pages for eviction
+      m_gpu->refresh_page_call(mf, false);
+      // decrea
     }
 
     return true; 
@@ -2334,6 +2338,8 @@ void ldst_unit::init(class gpgpu_sim* gpu,
   m_next_global = NULL;
   m_last_inst_gpu_sim_cycle = 0;
   m_last_inst_gpu_tot_sim_cycle = 0;
+
+  gpu->register_TLBflush([this](mem_addr_t addr) {return TLBflush(addr);});
 }
 
 #define TLB_SIZE 4096
@@ -2562,6 +2568,10 @@ inst->space.get_type() != shared_space) { unsigned warp_id = inst->warp_id();
    pipelined_simd_unit::issue(reg_set);
 }
  */
+
+void ldst_unit::TLBflush(mem_addr_t page_num){
+  TLB_evict(page_num);
+}
 bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type)
 {
   if (inst.empty() || inst.accessq_empty() || inst.active_count() == 0) {
@@ -2592,15 +2602,17 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   //   std::cout<<"\nFound in Page table valid";
   //   return true;
   // }
+  mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_back(),
+                          m_core->get_gpu()->gpu_sim_cycle +
+                              m_core->get_gpu()->gpu_tot_sim_cycle);
+  m_gpu->refresh_page_call(mf, true);
   if(TLB_lookup(page_no)){
     // The page was already found in TLB. On TLB hit refresh the TLB and return true.
     TLB_add(page_no);
     return true;
   }
   else{
-    mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_back(),
-                          m_core->get_gpu()->gpu_sim_cycle +
-                              m_core->get_gpu()->gpu_tot_sim_cycle);
+    
     std::cout<<"\nGotto fetch from CPU - page fault";
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);    

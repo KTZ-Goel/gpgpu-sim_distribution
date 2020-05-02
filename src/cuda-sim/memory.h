@@ -58,12 +58,16 @@ class mem_storage {
     memcpy(m_data, another.m_data, BSIZE);
     managed = false;
     valid = false;
+    dirty = false;
+    access_cnt = 0;
   }
 
   mem_storage() { 
     m_data = (unsigned char *)calloc(1, BSIZE); 
     managed = false;
     valid = false;
+    dirty = false;
+    access_cnt = 0;
   }
 
   ~mem_storage() {
@@ -119,11 +123,18 @@ class mem_storage {
 
   bool is_dirty(){
     return dirty;
+  }
 
   void set_clean(){
     dirty = false;
   }
-  }
+
+  
+  // Access counter per page
+  int	get_access_cnt	() { return access_cnt; }
+  void	increase_access	() { access_cnt++; }
+  void	decrease_access	() { access_cnt--; }
+  
 private:
   unsigned m_nbytes;
   unsigned char *m_data;
@@ -131,6 +142,7 @@ private:
   bool managed;
   bool valid;
   bool dirty;
+  int access_cnt;
 
 };
 
@@ -162,6 +174,11 @@ class memory_space {
    virtual mem_addr_t get_page_num (mem_addr_t addr) = 0;
    virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
    virtual bool is_valid (mem_addr_t pg_index) = 0;
+
+   // Access counter per page
+   virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
+   virtual void	increase_access	(mem_addr_t pg_index) = 0;
+   virtual void	decrease_access	(mem_addr_t pg_index) = 0;
 };
 
 template <unsigned BSIZE>
@@ -199,6 +216,10 @@ class memory_space_impl : public memory_space {
    virtual mem_addr_t get_page_num (mem_addr_t addr);
    virtual mem_addr_t get_mem_addr(mem_addr_t pg_index);
    virtual bool is_valid (mem_addr_t pg_index);
+   // Access counter per page
+   virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
+   virtual void	increase_access	(mem_addr_t pg_index) = 0;
+   virtual void	decrease_access	(mem_addr_t pg_index) = 0;
 
  private:
   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
