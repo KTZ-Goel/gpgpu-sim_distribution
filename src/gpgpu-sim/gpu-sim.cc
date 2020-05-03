@@ -1944,7 +1944,7 @@ void gpgpu_sim::memunit_cycle()
         {
           // Found in Page Table (Page Table Hit)
           //refresh_page_call(*iter, false);
-          std::cout<<"All pages ("<< get_global_memory()->get_page_num(mf->get_addr()) <<"found in page table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
+          std::cout<<"\nAll pages ("<< get_global_memory()->get_page_num(mf->get_addr()) <<"found in page table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
           getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
           latency_queue.erase(iter++);
         }
