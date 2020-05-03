@@ -1789,7 +1789,8 @@ void gpgpu_sim::do_prefetch()
         
         if(!page_to_push.empty())
         {
-          if(!numoffreepages--)
+          numoffreepages--;
+          if(!numoffreepages)
           {
             // BURN the entire buffer
             std::list<prefetch_req>::iterator iter2 = prefetch_buffer.begin();  
