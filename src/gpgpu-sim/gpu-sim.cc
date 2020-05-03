@@ -1804,6 +1804,7 @@ void gpgpu_sim::do_prefetch()
           {
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
+            std::cout<<"\n\nPrefetching "<<temp.page_addr;
             temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(2*DEFAULT_LATENCY);
             page_latency_queue_read.push_back(temp);
             iter2++;
@@ -1943,7 +1944,7 @@ void gpgpu_sim::memunit_cycle()
         {
           // Found in Page Table (Page Table Hit)
           //refresh_page_call(*iter, false);
-          std::cout<<"All pages found in page table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
+          std::cout<<"All pages ("<< get_global_memory()->get_page_num(mf->get_addr()) <<"found in page table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
           getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
           latency_queue.erase(iter++);
         }
