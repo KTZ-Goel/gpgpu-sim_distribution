@@ -1986,7 +1986,6 @@ void gpgpu_sim::memunit_cycle()
                   break;
                 }
                 std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
-                std::cout<<"\nBringing in a new page : "<<*iter;
                 // TLB Flush
                 TLB_shootdown(evicted);
                 // Push the evicted page to the write queue
@@ -1998,6 +1997,7 @@ void gpgpu_sim::memunit_cycle()
               }  
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
+              std::cout<<"\nBringing in a new page : "<< temp.page_addr;
               temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
               page_latency_queue_read.push_back(temp);
               iter2++;
