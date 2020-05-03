@@ -2089,7 +2089,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
       //Clear the pages for eviction
       m_gpu->refresh_page_call(mf, false);
       
-      if(access.get_type() == GLOBAL_ACC_W){
+      if(mf->get_mem_access().get_type() == GLOBAL_ACC_W){
           m_gpu->get_global_memory()->set_pages_dirty(mf->get_addr(), mf->get_access_size());
       }
     }
