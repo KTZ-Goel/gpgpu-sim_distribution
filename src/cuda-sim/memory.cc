@@ -125,7 +125,7 @@ template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_dirty(mem_addr_t
 }
 
 
-template<unsigned BSIZE> bool memory_space_impl<BSIZE>::set_page_clean(mem_addr_t page_num)
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_page_clean(mem_addr_t page_num)
 {
   return m_data[page_num].set_clean();
 }
