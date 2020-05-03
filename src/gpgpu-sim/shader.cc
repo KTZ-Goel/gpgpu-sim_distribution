@@ -1682,7 +1682,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
    if ( status == HIT ) {
        assert( !read_sent );
        m_core->dec_managed_access_req( mf->get_wid());
-       std::cout<<"\n HIT ::  Decreased managed access request";
+       //std::cout<<"\n HIT ::  Decreased managed access request";
 
        m_cu_core_queue.pop_front();
        if ( mf->get_inst().is_load()) {
@@ -1721,11 +1721,11 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
        assert( !read_sent );
        assert( !write_sent );
    } else {
-       assert( status == MISS || status == HIT_RESERVED );
+       assert( status ==  MISS || status == HIT_RESERVED );
        //inst.clear_active( access.get_warp_mask() ); // threads in mf writeback when mf returns
 
        m_core->dec_managed_access_req( mf->get_wid());        // Why decrease here?
-       std::cout<<"\n MISS ::  Decreased managed access request";
+       //std::cout<<"\n MISS ::  Decreased managed access request";
        m_cu_core_queue.pop_front();
    }    
    return result;
@@ -1781,7 +1781,7 @@ mem_stage_stall_type ldst_unit::process_managed_memory_access_queue( cache_t *ca
    std::list<cache_event> events;
    enum cache_request_status status = cache->access(mf->get_addr(),mf, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,events);
    //enum cache_request_status status = HIT; // debug make cache hits
-   std::cout<<"cache status : "<<status;
+   //std::cout<<"cache status : "<<status;
    return process_managed_cache_access( cache, mf->get_addr(), events, mf, status );
 }
 

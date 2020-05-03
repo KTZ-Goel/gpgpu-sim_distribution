@@ -1923,6 +1923,7 @@ void gpgpu_sim::refresh_page_call(mem_fetch *mf, bool addorremove)
         addCount(*iter); 
         get_global_memory()->increase_access(*iter);
         std::cout<<"\nCOUNT INCREASE::: increasing page count page num:"<<*iter;
+        std::cout<<"\nCurrent Page count : "<<get_global_memory()->get_access_cnt(*iter);
       } 
       else
       {
