@@ -1772,7 +1772,7 @@ void gpgpu_sim::register_prefetch(size_t m_device_addr, size_t count, struct CUs
     pre_q.m_stream = m_stream;
     prefetch_buffer.push_back(pre_q);
 }
-/*
+
 void gpgpu_sim::do_prefetch()
 {
   // check if there is anything in the prefetch cycle
@@ -1789,14 +1789,23 @@ void gpgpu_sim::do_prefetch()
         
         if(!page_to_push.empty())
         {
+          if(!numoffreepages--)
+          {
+            // BURN the entire buffer
+            std::list<prefetch_req>::iterator iter2 = prefetch_buffer.begin();  
+            while(!prefetch_buffer.empty())
+               prefetch_buffer.pop_front();
+            return;
+            // Done
+          }
           std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
           int k = 1;
           while(iter2 != page_to_push.end())
           {
-            page_latency_elem_t temp; 
+            page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(2*DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
-            page_latency_queue.push_back(temp);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(2*DEFAULT_LATENCY);
+            page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
           }
@@ -1806,7 +1815,7 @@ void gpgpu_sim::do_prefetch()
       else iter++;
     }
   }
-}*/
+}
 
 void gpgpu_sim::addCount(mem_addr_t addr)
 {
@@ -1873,7 +1882,7 @@ mem_addr_t gpgpu_sim::reserve_page()
     if(iter->count == 0)
     {
       tmp = iter->page_addr;
-      valid_page_list.erase(iter++);
+      valid_page_list.erase(iter);
       break;
     }
     iter++;
@@ -1921,7 +1930,7 @@ void gpgpu_sim::memunit_cycle()
   //std::cout<<"\nEntered Memunit cycle";
   simt_core_cluster* SIMTCluster;
   
-  //do_prefetch();
+  do_prefetch();
   if(!latency_queue.empty())
   {
     std::list<latency_elem_t>::iterator iter = latency_queue.begin();
