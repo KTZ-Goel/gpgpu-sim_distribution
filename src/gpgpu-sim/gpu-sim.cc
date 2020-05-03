@@ -79,7 +79,7 @@ class gpgpu_sim_wrapper {};
 #include <string>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define MAX_NUM_FREE_PAGES 2
+#define MAX_NUM_FREE_PAGES 8
 
 
 bool g_interactive_debugger_enabled = false;
@@ -1986,7 +1986,7 @@ void gpgpu_sim::memunit_cycle()
                 evicted = reserve_page();
                 if(!evicted)
                 {
-                  //std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
+                  std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
                   break;
                 }
                 std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
