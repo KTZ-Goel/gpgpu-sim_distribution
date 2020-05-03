@@ -2032,10 +2032,12 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
       if((access.get_type() == GLOBAL_ACC_R) && (access.get_type() == GLOBAL_ACC_W)){
         mem_fetch *mf = m_mf_allocator->alloc(inst, access, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
         m_gpu->refresh_page_call(mf, false);
+        if(access.get_type() == GLOBAL_ACC_W){
+          m_gpu->get_global_memory()->set_pages_dirty(mf->get_addr(), mf->get_access_size());
+        }
       }
     }
-    return inst.accessq_empty();
-    
+    return inst.accessq_empty();    
   }  
   else
   {
@@ -2086,7 +2088,10 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
 
       //Clear the pages for eviction
       m_gpu->refresh_page_call(mf, false);
-      // decrea
+      
+      if(access.get_type() == GLOBAL_ACC_W){
+          m_gpu->get_global_memory()->set_pages_dirty(mf->get_addr(), mf->get_access_size());
+      }
     }
 
     return true; 

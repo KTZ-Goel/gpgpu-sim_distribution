@@ -175,6 +175,13 @@ class memory_space {
    virtual mem_addr_t get_mem_addr(mem_addr_t pg_index) = 0;
    virtual bool is_valid (mem_addr_t pg_index) = 0;
    virtual std::list<mem_addr_t> get_pages(mem_addr_t addr, size_t length) = 0;
+   
+  // Method to find if the page is dirty
+  virtual bool is_page_dirty(mem_addr_t page_num) = 0;
+
+  // Method to set the page as dirty
+  virtual void set_pages_dirty( mem_addr_t addr, size_t length) = 0;
+  virtual void set_page_clean( mem_addr_t page_num) = 0;
 
    // Access counter per page
    virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
@@ -204,10 +211,11 @@ class memory_space_impl : public memory_space {
   virtual void set_pages_managed( mem_addr_t addr, size_t length);
   
   // Method to find if the page is dirty
-  virtual bool is_page_dirty(mem_addr_t addr, size_t length);
+  virtual bool is_page_dirty(mem_addr_t page_num);
 
   // Method to set the page as dirty
-  virtual void set_page_dirty( mem_addr_t addr, size_t length);
+  virtual void set_pages_dirty( mem_addr_t addr, size_t length);
+  virtual void set_page_clean( mem_addr_t page_num) = 0;
 
   // Methods to check page table(m_data) and make some changes
    virtual void	validate_page	(mem_addr_t pg_index);

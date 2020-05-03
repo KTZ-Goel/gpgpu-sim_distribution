@@ -79,7 +79,7 @@ class gpgpu_sim_wrapper {};
 #include <string>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define MAX_NUM_FREE_PAGES 8
+#define MAX_NUM_FREE_PAGES 262144
 
 
 bool g_interactive_debugger_enabled = false;
@@ -1922,15 +1922,15 @@ void gpgpu_sim::refresh_page_call(mem_fetch *mf, bool addorremove)
       {
         addCount(*iter); 
         get_global_memory()->increase_access(*iter);
-        std::cout<<"\nCOUNT INCREASE::: increasing page count page num:"<<*iter;
-        std::cout<<"\nCurrent Page count : "<<get_global_memory()->get_access_cnt(*iter);
+        // std::cout<<"\nCOUNT INCREASE::: increasing page count page num:"<<*iter;
+        // std::cout<<"\nCurrent Page count : "<<get_global_memory()->get_access_cnt(*iter);
       } 
       else
       {
         subtractCount(*iter);  
         get_global_memory()->decrease_access(*iter);
-        std::cout<<"\nCOUNT DECREASE::: decreasing page count page num:"<<*iter;
-        std::cout<<"\nCurrent Page count : "<<get_global_memory()->get_access_cnt(*iter);
+        // std::cout<<"\nCOUNT DECREASE::: decreasing page count page num:"<<*iter;
+        // std::cout<<"\nCurrent Page count : "<<get_global_memory()->get_access_cnt(*iter);
       }
       iter++;
     }
@@ -1993,11 +1993,15 @@ void gpgpu_sim::memunit_cycle()
                 // TLB Flush
                 TLB_shootdown(evicted);
                 // Push the evicted page to the write queue
-                page_write_latency_elem_t temp;
-                temp.page_addr = evicted;
-                temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(DEFAULT_LATENCY);
-                get_global_memory()->invalidate_page(evicted);
-                page_latency_queue_write.push_back(temp);
+                if(get_global_memory()->is_page_dirty(evicted))
+                {
+                  page_write_latency_elem_t temp;
+                  temp.page_addr = evicted;
+                  temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(DEFAULT_LATENCY);
+                  get_global_memory()->invalidate_page(evicted);
+                  page_latency_queue_write.push_back(temp);
+                  get_global_memory()->set_page_clean(evicted);  // Mark the page as clean.
+                }
               }  
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);

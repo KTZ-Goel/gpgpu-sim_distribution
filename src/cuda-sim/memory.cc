@@ -119,16 +119,26 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_managed( mem_a
   }
 }
 
-template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_dirty(mem_addr_t addr, size_t length)
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_dirty(mem_addr_t page_num)
 {
-  mem_addr_t page_index   = get_page_num (addr+length-1);
-  return m_data[page_index].is_dirty();
+  return m_data[page_num].is_dirty();
 }
 
-template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_page_dirty(mem_addr_t addr, size_t length)
+
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::set_page_clean(mem_addr_t page_num)
 {
-  mem_addr_t page_index   = get_page_num (addr+length-1);
-  m_data[page_index].set_dirty();
+  return m_data[page_num].set_clean();
+}
+
+
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_dirty(mem_addr_t addr, size_t length)
+{
+  mem_addr_t start_page = get_page_num (addr);
+  mem_addr_t end_page   = get_page_num (addr+length-1);
+  while(start_page <= end_page) {
+      m_data[start_page].set_dirty();
+      start_page++;
+  }
 }
 
 template <unsigned BSIZE>
