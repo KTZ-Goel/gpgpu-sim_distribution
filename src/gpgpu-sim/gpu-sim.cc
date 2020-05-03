@@ -1921,12 +1921,12 @@ void gpgpu_sim::refresh_page_call(mem_fetch *mf, bool addorremove)
       if(addorremove)
       {
         addCount(*iter); 
-        get_global_memory()->increase_access(mf->get_addr());
+        get_global_memory()->increase_access(*iter);
       } 
       else
       {
         subtractCount(*iter);  
-        get_global_memory()->decrease_access(mf->get_addr());
+        get_global_memory()->decrease_access(*iter);
       }
       iter++;
     }
