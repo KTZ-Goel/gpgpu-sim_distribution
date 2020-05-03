@@ -1783,7 +1783,7 @@ void gpgpu_sim::do_prefetch()
     {
       if((*iter).active)
       {
-        std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
+        //std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
         std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
         std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
         
@@ -1800,18 +1800,18 @@ void gpgpu_sim::do_prefetch()
             page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
+            
+            numoffreepages--;        
+            if(!numoffreepages)
+            {
+              // BURN the entire buffer
+              std::list<prefetch_req>::iterator iter2 = prefetch_buffer.begin();  
+              while(!prefetch_buffer.empty())
+                prefetch_buffer.pop_front();
+              return;
+              // Done
+            }
           }
-          numoffreepages--;        
-          if(!numoffreepages)
-          {
-            // BURN the entire buffer
-            std::list<prefetch_req>::iterator iter2 = prefetch_buffer.begin();  
-            while(!prefetch_buffer.empty())
-               prefetch_buffer.pop_front();
-            return;
-            // Done
-          }
-
         }
         prefetch_buffer.erase(iter++);
       }
@@ -1884,6 +1884,7 @@ mem_addr_t gpgpu_sim::reserve_page()
   {
     if(iter->count == 0)
     {
+      std::cout<<"A page found to evict the page number is "<<iter->page_addr<<std::endl;
       tmp = iter->page_addr;
       valid_page_list.erase(iter);
       break;
@@ -1970,7 +1971,7 @@ void gpgpu_sim::memunit_cycle()
               // Check whether there is non zero free pages, in that case just push it and update the page table and num
               if(numoffreepages){
                 numoffreepages--;
-                std::cout<<"A page is used Currently the number of pages are"<<numoffreepages<<std::endl;
+                std::cout<<"A page is used Currently the number of pages are "<<numoffreepages<<std::endl;
               }
               else 
               {
