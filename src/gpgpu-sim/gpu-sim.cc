@@ -2024,13 +2024,13 @@ void gpgpu_sim::memunit_cycle()
     {
       if((*iter).ready_cycle <= gpu_sim_cycle + gpu_tot_sim_cycle) // page is ready
       {
-         get_global_memory()->validate_page((*iter).page_addr);  // validate the page0
-         page_latency_queue_read.erase(iter++);     // Erase the queue
-         struct page_valid_elem_t p_t; 
-         p_t.count = get_global_memory()->get_access_cnt((*iter).page_addr);  // Push how many instruction are there
-         p_t.page_addr = (*iter).page_addr;  
-         std::cout<<"VALID LIST UPDATE:: Pushing page address:\n"<<(*iter).page_addr;     
-         valid_page_list.push_back(p_t); // The read command has returned now push the new page in the list
+        get_global_memory()->validate_page((*iter).page_addr);  // validate the page0
+        struct page_valid_elem_t p_t; 
+        p_t.count = get_global_memory()->get_access_cnt((*iter).page_addr);  // Push how many instruction are there
+        p_t.page_addr = (*iter).page_addr;  
+        std::cout<<"VALID LIST UPDATE:: Pushing page address:\n"<<(*iter).page_addr;     
+        valid_page_list.push_back(p_t); // The read command has returned now push the new page in the list
+        page_latency_queue_read.erase(iter++);     // Erase the queue 
       }
       else iter++;
     }
