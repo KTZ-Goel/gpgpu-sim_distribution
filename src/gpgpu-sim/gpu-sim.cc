@@ -1870,7 +1870,7 @@ mem_addr_t gpgpu_sim::reserve_page(){
   if(get_victim_pages().empty())
     return 0;
   
-  page_valid_elem_t victim = get_victim_pages().front();
+  pa9ge_valid_elem_t victim = get_victim_pages().front();
   valid_page_list.remove(victim);
   
   return victim.page_addr;
@@ -1880,16 +1880,19 @@ mem_addr_t gpgpu_sim::reserve_page()
 {
   std::list<page_valid_elem_t>::iterator iter = valid_page_list.begin();
   mem_addr_t tmp = 0;
-  while(iter != valid_page_list.end())
+  if(!valid_page_list.empty())
   {
-    if(iter->count == 0)
+    while(iter != valid_page_list.end())
     {
-      std::cout<<"A page found to evict the page number is "<<iter->page_addr<<std::endl;
-      tmp = iter->page_addr;
-      valid_page_list.erase(iter);
-      break;
+      if(iter->count == 0)
+      {
+        std::cout<<"A page found to evict the page number is "<<iter->page_addr<<std::endl;
+        tmp = iter->page_addr;
+        valid_page_list.erase(iter);
+        break;
+      }
+      iter++;
     }
-    iter++;
   }
   return tmp;
 }
@@ -1982,8 +1985,8 @@ void gpgpu_sim::memunit_cycle()
                   std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
                   break;
                 }
-                 std::cout<<"A page is evicted page Num"<<evicted<<std::endl;
-
+                std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
+                std::cout<<"\nBringing in a new page : "<<*iter;
                 // TLB Flush
                 TLB_shootdown(evicted);
                 // Push the evicted page to the write queue
