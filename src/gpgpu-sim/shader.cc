@@ -2028,7 +2028,7 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
         access_type = (iswrite) ? L_MEM_ST : L_MEM_LD;
       else
         access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
-    } else {
+    } else{
       mem_fetch *mf =
             m_mf_allocator->alloc(inst, access,
                                   m_core->get_gpu()->gpu_sim_cycle +

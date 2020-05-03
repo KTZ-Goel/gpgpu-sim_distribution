@@ -280,7 +280,8 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_pag
   mem_addr_t end_page   = get_page_num (addr+length-1);
   
   while(start_page <= end_page) {
-    page_list.push_back(start_page);  
+    if(m_data[start_page].is_managed())
+      page_list.push_back(start_page);
     start_page++;
   }
 
@@ -298,14 +299,14 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::increase_access (mem_add
 {
    // asserts whether the physical page is allocated. 
    // should never happen as they are allocated while memcpy.
-   return m_data[pg_index].increase_access();
+   m_data[pg_index].increase_access();
 }
 
 template<unsigned BSIZE> void memory_space_impl<BSIZE>::decrease_access (mem_addr_t pg_index)
 {
    // asserts whether the physical page is allocated. 
    // should never happen as they are allocated while memcpy.
-   return m_data[pg_index].decrease_access();
+   m_data[pg_index].decrease_access();
 }
 #ifdef UNIT_TEST
 
