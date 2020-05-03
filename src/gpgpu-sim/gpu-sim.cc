@@ -1930,6 +1930,7 @@ void gpgpu_sim::refresh_page_call(mem_fetch *mf, bool addorremove)
         subtractCount(*iter);  
         get_global_memory()->decrease_access(*iter);
         std::cout<<"\nCOUNT DECREASE::: decreasing page count page num:"<<*iter;
+        std::cout<<"\nCurrent Page count : "<<get_global_memory()->get_access_cnt(*iter);
       }
       iter++;
     }

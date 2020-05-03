@@ -2029,11 +2029,10 @@ bool ldst_unit::memory_cycle(warp_inst_t &inst,
       else
         access_type = (iswrite) ? G_MEM_ST : G_MEM_LD;
     } else{
-      mem_fetch *mf =
-            m_mf_allocator->alloc(inst, access,
-                                  m_core->get_gpu()->gpu_sim_cycle +
-                                      m_core->get_gpu()->gpu_tot_sim_cycle);
-      m_gpu->refresh_page_call(mf, false);
+      if((access.get_type() == GLOBAL_ACC_R) && (access.get_type() == GLOBAL_ACC_W)){
+        mem_fetch *mf = m_mf_allocator->alloc(inst, access, m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle);
+        m_gpu->refresh_page_call(mf, false);
+      }
     }
     return inst.accessq_empty();
     
@@ -2621,7 +2620,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
     
     //std::cout<<"\nGotto fetch from page table for page "<<page_no;
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
-    m_core_cu_queue.push_back(mf);    
+    m_core_cu_queue.push_back(mf);
 
     // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
     inst.accessq_pop_back();
