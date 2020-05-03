@@ -1986,7 +1986,7 @@ void gpgpu_sim::memunit_cycle()
                 evicted = reserve_page();
                 if(!evicted)
                 {
-                  std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
+                  //std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
                   break;
                 }
                 std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
