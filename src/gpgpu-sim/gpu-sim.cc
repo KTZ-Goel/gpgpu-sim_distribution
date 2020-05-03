@@ -1789,16 +1789,6 @@ void gpgpu_sim::do_prefetch()
         
         if(!page_to_push.empty())
         {
-          numoffreepages--;
-          if(!numoffreepages)
-          {
-            // BURN the entire buffer
-            std::list<prefetch_req>::iterator iter2 = prefetch_buffer.begin();  
-            while(!prefetch_buffer.empty())
-               prefetch_buffer.pop_front();
-            return;
-            // Done
-          }
           std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
           int k = 1;
           while(iter2 != page_to_push.end())
@@ -1811,6 +1801,17 @@ void gpgpu_sim::do_prefetch()
             iter2++;
             k++;
           }
+          numoffreepages--;        
+          if(!numoffreepages)
+          {
+            // BURN the entire buffer
+            std::list<prefetch_req>::iterator iter2 = prefetch_buffer.begin();  
+            while(!prefetch_buffer.empty())
+               prefetch_buffer.pop_front();
+            return;
+            // Done
+          }
+
         }
         prefetch_buffer.erase(iter++);
       }
