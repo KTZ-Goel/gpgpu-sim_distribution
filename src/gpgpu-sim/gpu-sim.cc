@@ -1718,7 +1718,7 @@ void gpgpu_sim::issue_block2core() {
 // }
 
 void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
-  std::cout<<"\n\n TLB Shootdown : "<<page_num;
+  //std::cout<<"\n\n TLB Shootdown : "<<page_num;
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
       m_cluster[i]->TLBflush(page_num);
 }
@@ -1751,7 +1751,7 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
 
 void gpgpu_sim::activate_prefetch(size_t m_device_addr, size_t m_cnt, struct CUstream_st *m_stream)
 {
-  std::cout<<"\n\n Activate Prefetch called?";
+  //std::cout<<"\n\n Activate Prefetch called?";
   for(std::list<prefetch_req>::iterator iter = prefetch_buffer.begin(); iter!=prefetch_buffer.end(); iter++){
       //if(iter->start_addr == m_device_addr && iter->size == m_cnt && iter->m_stream->get_uid() == m_stream->get_uid()) {
         if(iter->start_addr == m_device_addr && iter->size == m_cnt) 
@@ -1764,7 +1764,7 @@ void gpgpu_sim::activate_prefetch(size_t m_device_addr, size_t m_cnt, struct CUs
 
 void gpgpu_sim::register_prefetch(size_t m_device_addr, size_t count, struct CUstream_st *m_stream)
 {
-  std::cout<<"\n\n Entered Register Prefetch";
+  //std::cout<<"\n\n Entered Register Prefetch";
     struct prefetch_req pre_q;
     pre_q.start_addr = m_device_addr;
     pre_q.size = count;
@@ -1783,7 +1783,7 @@ void gpgpu_sim::do_prefetch()
     {
       if((*iter).active)
       {
-        //std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
+        ////std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
         std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
         std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
         
@@ -1795,7 +1795,7 @@ void gpgpu_sim::do_prefetch()
           {
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
-            std::cout<<"\n\nPrefetching "<<temp.page_addr;
+            //std::cout<<"\n\nPrefetching "<<temp.page_addr;
             temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(2*DEFAULT_LATENCY);
             page_latency_queue_read.push_back(temp);
             iter2++;
@@ -1886,7 +1886,7 @@ mem_addr_t gpgpu_sim::reserve_page()
     {
       if(iter->count == 0)
       {
-        std::cout<<"A page found to evict the page number is "<<iter->page_addr<<std::endl;
+        //std::cout<<"A page found to evict the page number is "<<iter->page_addr<<std::endl;
         tmp = iter->page_addr;
         valid_page_list.erase(iter);
         break;
@@ -1978,7 +1978,7 @@ void gpgpu_sim::memunit_cycle()
               // Check whether there is non zero free pages, in that case just push it and update the page table and num
               if(numoffreepages){
                 numoffreepages--;
-                std::cout<<"A page is used Currently the number of pages are "<<numoffreepages<<std::endl;
+                //std::cout<<"A page is used Currently the number of pages are "<<numoffreepages<<std::endl;
               }
               else 
               {
@@ -1989,7 +1989,7 @@ void gpgpu_sim::memunit_cycle()
                   //std::cout<<"\nSTALL: currently No more pages left to evict"<<std::endl;
                   break;
                 }
-                std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
+                //std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
                 // TLB Flush
                 TLB_shootdown(evicted);
                 // Push the evicted page to the write queue
@@ -2005,7 +2005,7 @@ void gpgpu_sim::memunit_cycle()
               }  
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
-              std::cout<<"\nBringing in a new page : "<< temp.page_addr;
+              //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
               temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
               page_latency_queue_read.push_back(temp);
               iter2++;
@@ -2036,7 +2036,7 @@ void gpgpu_sim::memunit_cycle()
         struct page_valid_elem_t p_t; 
         p_t.count = get_global_memory()->get_access_cnt((*iter).page_addr);  // Push how many instruction are there
         p_t.page_addr = (*iter).page_addr;  
-        std::cout<<"\n VALID LIST UPDATE:: Pushing page address:"<<(*iter).page_addr<<" The count value is "<<p_t.count;
+        //std::cout<<"\n VALID LIST UPDATE:: Pushing page address:"<<(*iter).page_addr<<" The count value is "<<p_t.count;
 
         valid_page_list.push_back(p_t); // The read command has returned now push the new page in the list
         page_latency_queue_read.erase(iter++);     // Erase the queue 
