@@ -1717,7 +1717,7 @@ ldst_unit::process_managed_cache_access( cache_t* cache,
 
    } else if ( status == RESERVATION_FAIL ) {
        result = COAL_STALL;
-       std::cout<<"\n Reservation fail ::  No Decreased managed access request";
+       //std::cout<<"\n Reservation fail ::  No Decreased managed access request";
        assert( !read_sent );
        assert( !write_sent );
    } else {
