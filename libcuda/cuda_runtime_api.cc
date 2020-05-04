@@ -2417,11 +2417,11 @@ cudaDeviceSynchronizeInternal(gpgpu_context *gpgpu_ctx = NULL) {
             else
             {
               std::cout<<"\nCUDADEVICESYNC: The Host Ptr  value is ";
-            } */
+            } 
             if((void *)devPtr == NULL)
               std::cout<<"SOME_ERROR::The value of DEV Ptr is NULL for Some reason";
             else
-              std::cout<<"CUDADEVICESYNC: The Dev Ptr value is "<< *(*(int *)devPtr);
+              std::cout<<"CUDADEVICESYNC: The Dev Ptr value is "<< *(*(int *)devPtr);*/
 		}
   }
   // Blocks until the device has completed all preceding requested tasks
