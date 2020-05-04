@@ -2412,8 +2412,14 @@ cudaDeviceSynchronizeInternal(gpgpu_context *gpgpu_ctx = NULL) {
             size_t   size    = iter->second->allocation_size;
 			iter->second->copied = false;
             context->get_device()->get_gpgpu()->memcpy_from_gpu( (void *)hostPtr, (size_t)devPtr, size); 
-            std::cout<<"CUDADEVICESYNC: The Host Ptr  value is "<< *((int *)hostPtr);
-            std::cout<<"CUDADEVICESYNC: The Dev Ptr value is "<< *((int *)devPtr);
+            if((void *)hostPtr == NULL)
+              std::cout<<"SOME_ERROR::The value of Host Ptr is NULL for Some reason";
+            else
+              std::cout<<"CUDADEVICESYNC: The Host Ptr  value is "<< *((int *)hostPtr);
+            if((void *)devPtr == NULL)
+              std::cout<<"SOME_ERROR::The value of DEV Ptr is NULL for Some reason";
+            else
+              std::cout<<"CUDADEVICESYNC: The Dev Ptr value is "<< *((int *)devPtr);
 		}
   }
   // Blocks until the device has completed all preceding requested tasks
