@@ -2411,7 +2411,9 @@ cudaDeviceSynchronizeInternal(gpgpu_context *gpgpu_ctx = NULL) {
             new_addr_type devPtr  = iter->second->gpu_mem_addr;
             size_t   size    = iter->second->allocation_size;
 			iter->second->copied = false;
-            context->get_device()->get_gpgpu()->memcpy_from_gpu( (void *)hostPtr, (size_t)devPtr, size);   
+            context->get_device()->get_gpgpu()->memcpy_from_gpu( (void *)hostPtr, (size_t)devPtr, size); 
+            std::cout<<"CUDADEVICESYNC: The Host Ptr  value is "<< (int)(*(hostPtr));
+            std::cout<<"CUDADEVICESYNC: The Dev Ptr value is "<< (int)(*(devPtr));
 		}
   }
   // Blocks until the device has completed all preceding requested tasks
