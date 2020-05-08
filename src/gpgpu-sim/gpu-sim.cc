@@ -1759,9 +1759,6 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
       {
         new_req_list.push_back(*iter);
       }
-      else {
-        Num_Coal++;
-      }
   }
 
   return new_req_list;
@@ -1963,6 +1960,7 @@ void gpgpu_sim::memunit_cycle()
           // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
           // in the list
           std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
+          Num_Coal += page_list.size() - page_to_push.size();
           if(!page_to_push.empty())
           {
             std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
