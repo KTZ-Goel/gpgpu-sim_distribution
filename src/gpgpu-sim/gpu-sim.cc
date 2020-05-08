@@ -1799,7 +1799,7 @@ void gpgpu_sim::do_prefetch()
     {
       if((*iter).active)
       {
-        std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
+        //std::cout<<"\nThe address "<< (*iter).start_addr <<" is now ready to be prefetched";
         //std::cout<<"\n The stream id for prefetch is "<<(*iter).m_stream;
         std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages((*iter).start_addr, (*iter).size);
         std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
@@ -1822,7 +1822,7 @@ void gpgpu_sim::do_prefetch()
             get_global_memory()->set_page_prefetched(*iter2); // Set the page as prefetched
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
-            std::cout<<"\n\nPrefetching "<<temp.page_addr;
+            //std::cout<<"\n\nPrefetching "<<temp.page_addr;
             temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
             page_latency_queue_read.push_back(temp);
             iter2++;

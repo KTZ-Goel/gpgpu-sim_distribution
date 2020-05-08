@@ -103,8 +103,6 @@ Getting better IPC when runnign with than without.... Not much effect if Cuda Me
 
 Stats
 
-UVM -> 
-
 Varying TLB Size
     TLB -> Disable TLB (size = 0) with and without
         - IPC
