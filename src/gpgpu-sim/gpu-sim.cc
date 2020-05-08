@@ -1038,9 +1038,9 @@ void gpgpu_sim::print_stats() {
         "----------------------------END-of-Interconnect-DETAILS---------------"
         "----------\n");
   }
-  printf("gpu_ipc = %12.4f\n", (float)gpu_sim_insn / gpu_sim_cycle);
-  printf("\n\n ----------------------------- UVM Stats ---------------------------------\n");
-  printf(" gpu total global managed memory used : %lf % \n", (MAX_NUM_FREE_PAGES - numoffreepages));
+  printf("\n gpu_ipc = %12.4f\n", (float)gpu_sim_insn / gpu_sim_cycle);
+  printf("\n ----------------------------- UVM Stats ---------------------------------\n");
+  printf(" gpu total global managed memory used : %ld \n", (MAX_NUM_FREE_PAGES - numoffreepages));
   printf(" gpu page faults total : %ld \n", Num_Page_Fault);
   printf(" gpu Page Evictions : %d\n", Num_Evictions);
   printf(" gpu page thrashing experienced : %ld\n", Num_Thrashed);
