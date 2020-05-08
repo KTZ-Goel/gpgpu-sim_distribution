@@ -187,6 +187,7 @@ class memory_space {
    virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
    virtual void	increase_access	(mem_addr_t pg_index) = 0;
    virtual void	decrease_access	(mem_addr_t pg_index) = 0;
+   virtual unsigned get_page_size() = 0;
 };
 
 template <unsigned BSIZE>
