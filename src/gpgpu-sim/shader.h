@@ -1554,6 +1554,7 @@ class shader_core_config : public core_config {
   int gpgpu_num_mem_units;
   int gpgpu_num_int_units;
 
+  int TLB_Size;
   // Shader core resources
   unsigned gpgpu_shader_registers;
   int gpgpu_warpdistro_shader;

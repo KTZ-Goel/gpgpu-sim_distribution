@@ -2352,7 +2352,7 @@ void ldst_unit::init(class gpgpu_sim* gpu,
   //gpu->getGmmu()->register_tlbflush_callback([this](mem_addr_t addr) { return invalidate_tlb(addr); });
 }
 
-#define TLB_SIZE 4096
+//#define TLB_SIZE 4096
 
 ldst_unit::ldst_unit(class gpgpu_sim* gpu,
                      mem_fetch_interface *icnt,
@@ -2363,7 +2363,7 @@ ldst_unit::ldst_unit(class gpgpu_sim* gpu,
                      unsigned sid, unsigned tpc)
     : pipelined_simd_unit(NULL, config, config->smem_latency, core),
       m_next_wb(config) {
-  tlb_max_size = TLB_SIZE;
+  tlb_max_size = config->TLB_Size;
   assert(config->smem_latency > 1);
   init(gpu, icnt, mf_allocator, core, operand_collector, scoreboard, config,
        mem_config, stats, sid, tpc);

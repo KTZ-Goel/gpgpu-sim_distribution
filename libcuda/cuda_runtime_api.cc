@@ -928,10 +928,10 @@ cudaError_t cudaSetupArgumentInternal(const void *arg, size_t size,
 	// ******	
 
   config.set_arg(arg, size, offset);
-  printf(
-      "GPGPU-Sim PTX: Setting up arguments for %zu bytes starting at "
-      "0x%llx..\n",
-      size, (unsigned long long)arg);
+  // printf(
+  //     "GPGPU-Sim PTX: Setting up arguments for %zu bytes starting at "
+  //     "0x%llx..\n",
+  //     size, (unsigned long long)arg);
 
   return g_last_cudaError = cudaSuccess;
 }

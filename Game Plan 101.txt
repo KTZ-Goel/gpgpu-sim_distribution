@@ -101,19 +101,23 @@ Getting better IPC when runnign with than without.... Not much effect if Cuda Me
 
 
 
-Stats
+Stats:
 
-Varying TLB Size
-    TLB -> Disable TLB (size = 0) with and without
+    BackProp
+    BFS
+    NW
+
+Varying TLB Size 
+    TLB -> Disable TLB (size = 0) with and without (0, 4096, 8192)
         - IPC
         - number of page faults (gpgpu-sim.cc)
         - TLB Misses    memory_space
         - TLB Hits      memory_space
 
-SW prefetching -> without CudaMemPrefetchAsync
+SW prefetching (TLB 4096) -> with and without CudaMemPrefetchAsync
     - IPC
     - Number of page-faults
 
-HW Prefetching -> without cudaMemprefetch
+Random HW Prefetching -> without cudaMemprefetch
 	- show ipc difference with and without hw prefetcher
 	- show number of observed page faults in case of page faults

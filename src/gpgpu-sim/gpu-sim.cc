@@ -293,6 +293,11 @@ void shader_core_config::reg_options(class OptionParser *opp) {
                          "Number of registers per shader core. Limits number "
                          "of concurrent CTAs. (default 8192)",
                          "8192");
+  option_parser_register(opp, "-gpgpu_TLB_size", OPT_UINT32,
+                        &TLB_Size,
+                        "TLB size per shader core "
+                        "(default 4096)",
+                        "4096");
   option_parser_register(
       opp, "-gpgpu_registers_per_block", OPT_UINT32, &gpgpu_registers_per_block,
       "Maximum number of registers per CTA. (default 8192)", "8192");
