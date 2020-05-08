@@ -199,7 +199,7 @@ class memory_space {
 
   // Method to mark the page as prefetched
   virtual void set_page_prefetched( mem_addr_t pg_index) = 0;
-  virtual void clear_page_prefecthed( mem_addr_t pg_index) = 0;
+  virtual void clear_page_prefetched( mem_addr_t pg_index) = 0;
   virtual bool is_page_prefetched(mem_addr_t pg_index) = 0;
 
    // Access counter per page
