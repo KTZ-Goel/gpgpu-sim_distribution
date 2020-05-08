@@ -1946,8 +1946,6 @@ void gpgpu_sim::memunit_cycle()
         if(page_list.empty())
         {
           // Found in Page Table (Page Table Hit)
-          //refresh_page_call(*iter, false);
-          //std::cout<<"\nAll pages ("<< get_global_memory()->get_page_num(mf->get_addr()) <<"found in page table at "<<gpu_sim_cycle + gpu_tot_sim_cycle<<std::endl;
           getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
           latency_queue.erase(iter++);
         }
@@ -1960,7 +1958,7 @@ void gpgpu_sim::memunit_cycle()
           // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
           // in the list
           std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
-          Num_Coal += page_list.size() - page_to_push.size();
+          Num_Coal += (page_list.size() - page_to_push.size());
           if(!page_to_push.empty())
           {
             std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
@@ -1995,7 +1993,6 @@ void gpgpu_sim::memunit_cycle()
                 // Push the evicted page to the write queue
                 if(get_global_memory()->is_page_dirty(evicted))
                 {
-                  page_write_latency_elem_t temp;
                   temp.page_addr = evicted;
                   temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(DEFAULT_LATENCY);
                   get_global_memory()->invalidate_page(evicted);
