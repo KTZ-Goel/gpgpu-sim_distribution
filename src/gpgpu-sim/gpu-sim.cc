@@ -1962,6 +1962,7 @@ void gpgpu_sim::memunit_cycle()
           {
             (*iter).pending = true;
             Num_Coal += (page_list.size() - page_to_push.size());
+            Num_Page_Fault += page_to_push.size();
           }
           
           if(!page_to_push.empty())
@@ -1969,7 +1970,7 @@ void gpgpu_sim::memunit_cycle()
             std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
             int k2 = 0;
 
-            Num_Page_Fault += page_to_push.size();
+            //Num_Page_Fault += page_to_push.size();
             //Num_Coal += (page_list.size() - page_to_push.size());
             page_read_latency_elem_t temp2;
             temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle;
