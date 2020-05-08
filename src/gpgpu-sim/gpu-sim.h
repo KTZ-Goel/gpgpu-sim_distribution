@@ -615,8 +615,8 @@ class gpgpu_sim : public gpgpu_t {
   // backward pointer
   class gpgpu_context *gpgpu_ctx;
 
-  void inc_TLB_hits();
-  void inc_TLB_misses();
+  void inc_TLB_hits() { TLB_hits++; };
+  void inc_TLB_misses() { TLB_misses++; };
  private:
   // clocks
   
