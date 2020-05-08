@@ -341,7 +341,7 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::register_pf_hits (mem_ad
   mem_addr_t end_page   = get_page_num (addr+length-1);
   
   while(start_page <= end_page) {
-    if(m_data[start_page].is_managed() && is_page_prefetched(m_data[start_page]))
+    if(m_data[start_page].is_managed() && m_data[start_page].is_prefetched())
       pf_hits++;
     start_page++;
   }
