@@ -79,7 +79,7 @@ class gpgpu_sim_wrapper {};
 #include <string>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define MAX_NUM_FREE_PAGES 262144
+#define MAX_NUM_FREE_PAGES 20
 
 
 bool g_interactive_debugger_enabled = false;
@@ -93,6 +93,8 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 #define DRAM 0x04
 #define ICNT 0x08
 #define MEMUNIT 0x10
+
+#define PREFETCH_RANDOM 1
 
 #define MEM_LATENCY_STAT_IMPL
 
@@ -1794,15 +1796,6 @@ void gpgpu_sim::do_prefetch()
           int k = 1;
           while(iter2 != page_to_push.end())
           {
-            page_read_latency_elem_t temp; 
-            temp.page_addr = (*iter2);
-            //std::cout<<"\n\nPrefetching "<<temp.page_addr;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k*(2*DEFAULT_LATENCY);
-            page_latency_queue_read.push_back(temp);
-            iter2++;
-            k++;
-            
-            numoffreepages--;        
             if(!numoffreepages)
             {
               // BURN the entire buffer
@@ -1812,6 +1805,15 @@ void gpgpu_sim::do_prefetch()
               return;
               // Done
             }
+            page_read_latency_elem_t temp; 
+            temp.page_addr = (*iter2);
+            std::cout<<"\n\nPrefetching "<<temp.page_addr;
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY);
+            page_latency_queue_read.push_back(temp);
+            iter2++;
+            k++;
+            
+            numoffreepages--;
           }
         }
         prefetch_buffer.erase(iter++);
@@ -2006,11 +2008,23 @@ void gpgpu_sim::memunit_cycle()
               }  
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
-              //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
+              std::cout<<"\nBringing in a new page : "<< temp.page_addr;
               temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
               page_latency_queue_read.push_back(temp);
               iter2++;
-              k++;             
+              k++;           
+              #ifdef PREFETCH_RANDOM
+              // Calculate Prefetch Page
+              size_t random_size = ( rand() % 10) * 4096;
+
+              mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);   // Add code here
+              struct prefetch_req  new_pref;
+              new_pref.start_addr = prefetch_address;
+              new_pref.size = m_config.page_size;
+              new_pref.m_stream = NULL;
+              new_pref.active = true;
+              prefetch_buffer.push_back(new_pref);
+        #endif  
             }
             //(*iter).ready_cycle = temp.ready_cycle;
           }
