@@ -1891,8 +1891,8 @@ class shader_core_ctx : public core_t {
     assert(k);
     m_kernel = k;
     //        k->inc_running();
-    printf("GPGPU-Sim uArch: Shader %d bind to kernel %u \'%s\'\n", m_sid,
-           m_kernel->get_uid(), m_kernel->name().c_str());
+    // printf("GPGPU-Sim uArch: Shader %d bind to kernel %u \'%s\'\n", m_sid,
+    //        m_kernel->get_uid(), m_kernel->name().c_str());
   }
 
   // accessors
