@@ -94,7 +94,7 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 #define ICNT 0x08
 #define MEMUNIT 0x10
 
-//#define PREFETCH_RANDOM 1
+#define PREFETCH_RANDOM 1
 
 #define MEM_LATENCY_STAT_IMPL
 
@@ -2093,6 +2093,8 @@ void gpgpu_sim::memunit_cycle()
       latency_queue.push_back(p_t); // stays in this queue till it is serviced on a page by page basis
     }
   }
+
+  printf("\nPF HITS::: Total PF Hits are %ld \n", the_gpgpusim->g_the_gpu->get_global_memory()->get_pf_hits());  
 }
 
 unsigned long long g_single_step =
