@@ -1759,6 +1759,9 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
       {
         new_req_list.push_back(*iter);
       }
+      else {
+        Num_Coal++;
+      }
   }
 
   return new_req_list;
@@ -2022,7 +2025,7 @@ void gpgpu_sim::memunit_cycle()
                 new_pref.active = true;
                 prefetch_buffer.push_back(new_pref);
               }
-        #endif  
+        #endif
             }
             (*iter).ready_cycle = temp.ready_cycle;
           }
