@@ -1958,14 +1958,14 @@ void gpgpu_sim::memunit_cycle()
           // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
           // in the list
           std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
-          Num_Coal += (page_list.size() - page_to_push.size());
+          
           if(!page_to_push.empty())
           {
             std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
             int k2 = 0;
 
             Num_Page_Fault += page_to_push.size();
-            
+            Num_Coal += (page_list.size() - page_to_push.size());
             page_read_latency_elem_t temp2;
             temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle;
             while(iter2 != page_to_push.end())
@@ -2006,7 +2006,7 @@ void gpgpu_sim::memunit_cycle()
               temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
               page_latency_queue_read.push_back(temp2);
               iter2++;
-              k++;           
+              k++;
         #ifdef PREFETCH_RANDOM
               // Calculate Prefetch Page
               mem_addr_t random_size = ( rand() % 5) + 1;
@@ -2023,7 +2023,6 @@ void gpgpu_sim::memunit_cycle()
               }
         #endif
             }
-            (*iter).ready_cycle = temp2.ready_cycle;
           }
 
           iter++;
