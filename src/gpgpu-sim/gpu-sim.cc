@@ -1942,7 +1942,7 @@ void gpgpu_sim::memunit_cycle()
       if((*iter).ready_cycle <= (gpu_sim_cycle + gpu_tot_sim_cycle)){
         mem_fetch* mf = (*iter).mf;
         std::list<mem_addr_t> page_list = get_global_memory()->get_faulty_pages(mf->get_addr(), mf->get_access_size());
-        printf("\n\n Access Size : %ld", page_list.size());
+        //printf("\n\n Access Size : %ld", page_list.size());
         if(page_list.empty())
         {
           // Found in Page Table (Page Table Hit)
@@ -1966,7 +1966,9 @@ void gpgpu_sim::memunit_cycle()
             int k2 = 0;
 
             Num_Page_Fault += page_to_push.size();
-
+            
+            page_read_latency_elem_t temp;
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle;
             while(iter2 != page_to_push.end())
             {
               // Check each page whether it exit in write queue, if it does, then change the latency
@@ -2000,7 +2002,6 @@ void gpgpu_sim::memunit_cycle()
                   get_global_memory()->set_page_clean(evicted);  // Mark the page as clean.
                 }
               }
-              page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
               //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
               temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
@@ -2023,7 +2024,7 @@ void gpgpu_sim::memunit_cycle()
               }
         #endif  
             }
-            //(*iter).ready_cycle = temp.ready_cycle;
+            (*iter).ready_cycle = temp.ready_cycle;
           }
 
           iter++;
