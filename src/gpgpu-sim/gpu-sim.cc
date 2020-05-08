@@ -1822,7 +1822,7 @@ void gpgpu_sim::do_prefetch()
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
             //std::cout<<"\n\nPrefetching "<<temp.page_addr;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*m_config.pcie_latency);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*10 + (m_config.pcie_latency);
             page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
