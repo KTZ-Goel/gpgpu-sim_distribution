@@ -1964,6 +1964,7 @@ void gpgpu_sim::memunit_cycle()
             (*iter).pending = true;
             Num_Coal += (page_list.size() - page_to_push.size());
             Num_Page_Fault += page_to_push.size();
+            get_global_memory()->register_pf_hits(mf->get_addr(), mf->get_access_size());
           }
           
           if(!page_to_push.empty())

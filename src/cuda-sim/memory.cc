@@ -332,6 +332,21 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_pag
   return page_list;
 }
 
+
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::register_pf_hits (mem_addr_t addr, size_t length)
+{
+  std::list<mem_addr_t> page_list;
+
+  mem_addr_t start_page = get_page_num (addr);
+  mem_addr_t end_page   = get_page_num (addr+length-1);
+  
+  while(start_page <= end_page) {
+    if(m_data[start_page].is_managed() && is_page_prefetched(m_data[start_page]))
+      pf_hits++;
+    start_page++;
+  }
+}
+
 template<unsigned BSIZE> int memory_space_impl<BSIZE>::get_access_cnt (mem_addr_t pg_index)
 {
    // asserts whether the physical page is allocated. 

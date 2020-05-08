@@ -208,6 +208,8 @@ class memory_space {
    virtual void	decrease_access	(mem_addr_t pg_index) = 0;
    virtual unsigned get_page_size() = 0;
    virtual unsigned long long get_pf_hits() = 0;
+   
+  virtual void register_pf_hits(mem_addr_t addr, size_t length) = 0;
 };
 
 template <unsigned BSIZE>
@@ -256,6 +258,7 @@ class memory_space_impl : public memory_space {
   virtual void set_page_prefetched( mem_addr_t pg_index);
   virtual void clear_page_prefetched( mem_addr_t pg_index);
   virtual bool is_page_prefetched(mem_addr_t pg_index);
+  virtual void register_pf_hits(mem_addr_t addr, size_t length);
 
   virtual unsigned long long get_pf_hits();
  private:
