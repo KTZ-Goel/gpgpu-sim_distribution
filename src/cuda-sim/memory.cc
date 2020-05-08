@@ -36,7 +36,7 @@ memory_space_impl<BSIZE>::memory_space_impl(std::string name,
                                             unsigned hash_size) {
   m_name = name;
   MEM_MAP_RESIZE(hash_size);
-
+  pf_hits = 0;
   m_log2_block_size = -1;
   for (unsigned n = 0, mask = 1; mask != 0; mask <<= 1, n++) {
     if (BSIZE & mask) {
@@ -144,6 +144,29 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_dirty(mem_addr
       m_data[start_page].set_dirty();
       start_page++;
   }
+}
+
+
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_prefetched(mem_addr_t page_num)
+{
+  return m_data[page_num].is_prefetched();
+}
+
+
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::clear_page_prefetched(mem_addr_t page_num)
+{
+  return m_data[page_num].clear_prefetched();
+}
+
+
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_page_prefetched(mem_addr_t pg_index)
+{
+  m_data[pg_index].set_prefetched();
+}
+
+template<unsigned BSIZE> unsigned long long memory_space_impl<BSIZE>::get_pf_hits()
+{
+  return pf_hits;
 }
 
 template <unsigned BSIZE>
@@ -283,6 +306,7 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_fau
   mem_addr_t end_page   = get_page_num (addr+length-1);
   
   while(start_page <= end_page) {
+      if(is_prefetched(start_page))   pf_hits++;  // Increase PF Hits
       if (!is_valid(start_page)) {
           page_list.push_back(start_page);
       }

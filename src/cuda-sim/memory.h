@@ -60,6 +60,7 @@ class mem_storage {
     valid = false;
     dirty = false;
     access_cnt = 0;
+    prefetched = false;
   }
 
   mem_storage() { 
@@ -68,6 +69,7 @@ class mem_storage {
     valid = false;
     dirty = false;
     access_cnt = 0;
+    prefetched = false;
   }
 
   ~mem_storage() {
@@ -129,9 +131,20 @@ class mem_storage {
     dirty = false;
   }
 
+  void set_prefetched(){
+    prefetched = true;
+  }
+
+  bool is_prefetched(){
+    return prefetched;
+  }
+
+  void clear_prefetched(){
+    prefetched = false;
+  }
   
   // Access counter per page
-  int	get_access_cnt	() { return access_cnt; }
+  int	  get_access_cnt () { return access_cnt; }
   void	increase_access	() { access_cnt++; }
   void	decrease_access	() { access_cnt--; }
   
@@ -143,6 +156,7 @@ private:
   bool valid;
   bool dirty;
   int access_cnt;
+  bool prefetched;
 
 };
 
@@ -183,11 +197,17 @@ class memory_space {
   virtual void set_pages_dirty( mem_addr_t addr, size_t length) = 0;
   virtual void set_page_clean( mem_addr_t page_num) = 0;
 
+  // Method to mark the page as prefetched
+  virtual void set_page_prefetched( mem_addr_t pg_index) = 0;
+  virtual void clear_page_prefecthed( mem_addr_t pg_index) = 0;
+  virtual bool is_page_prefetched(mem_addr_t pg_index) = 0;
+
    // Access counter per page
    virtual int	get_access_cnt	(mem_addr_t pg_index) = 0;
    virtual void	increase_access	(mem_addr_t pg_index) = 0;
    virtual void	decrease_access	(mem_addr_t pg_index) = 0;
    virtual unsigned get_page_size() = 0;
+   virtual unsigned long long get_pf_hits() = 0;
 };
 
 template <unsigned BSIZE>
@@ -231,6 +251,13 @@ class memory_space_impl : public memory_space {
    virtual void	increase_access	(mem_addr_t pg_index);
    virtual void	decrease_access	(mem_addr_t pg_index);
    virtual unsigned get_page_size();
+
+  // Method to mark the page as prefetched
+  virtual void set_page_prefetched( mem_addr_t pg_index);
+  virtual void clear_page_prefetched( mem_addr_t pg_index);
+  virtual bool is_page_prefetched(mem_addr_t pg_index);
+
+  virtual unsigned long long get_pf_hits();
  private:
   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
                          void *data) const;
@@ -244,7 +271,7 @@ class memory_space_impl : public memory_space {
    */
   typedef mem_map<mem_addr_t, mem_storage<BSIZE> > map_t;
   map_t m_data;
-
+  unsigned long long pf_hits;
   std::map<unsigned, mem_addr_t> m_watchpoints;
 };
 

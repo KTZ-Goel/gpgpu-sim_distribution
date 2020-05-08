@@ -1805,10 +1805,11 @@ void gpgpu_sim::do_prefetch()
               return;
               // Done
             }
+            get_global_memory()->set_page_prefetched(*iter2); // Set the page as prefetched
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
             std::cout<<"\n\nPrefetching "<<temp.page_addr;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
             page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
@@ -1995,6 +1996,7 @@ void gpgpu_sim::memunit_cycle()
                 //std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
                 // TLB Flush
                 TLB_shootdown(evicted);
+                get_global_memory()->clear_page_prefetched(evicted);
                 // Push the evicted page to the write queue
                 if(get_global_memory()->is_page_dirty(evicted))
                 {

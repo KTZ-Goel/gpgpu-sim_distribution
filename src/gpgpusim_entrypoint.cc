@@ -58,6 +58,7 @@ void *gpgpu_sim_thread_sequential(void *ctx_ptr) {
         ctx->the_gpgpusim->g_the_gpu->deadlock_check();
       }
       ctx->the_gpgpusim->g_the_gpu->print_stats();
+      std::cout<<"\nPF HITS::: Total PF Hits are "<<ctx->the_gpgpusim->g_the_gpu->get_global_memory()->get_pf_hits();
       ctx->the_gpgpusim->g_the_gpu->update_stats();
       ctx->print_simulation_time();
     }
