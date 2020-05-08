@@ -306,8 +306,6 @@ template<unsigned BSIZE> std::list<mem_addr_t> memory_space_impl<BSIZE>::get_fau
   mem_addr_t end_page   = get_page_num (addr+length-1);
   
   while(start_page <= end_page) {
-      if(is_page_prefetched(start_page))
-        pf_hits++;  // Increase PF Hits
       if (!is_valid(start_page)) {
           page_list.push_back(start_page);
       }
