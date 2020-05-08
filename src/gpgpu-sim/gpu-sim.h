@@ -617,7 +617,14 @@ class gpgpu_sim : public gpgpu_t {
 
  private:
   // clocks
-  int numoffreepages;
+  
+  // Added variables for UVM implementation
+  unsigned long long numoffreepages;
+  unsigned long long Num_Page_Fault;
+  unsigned long long Num_Evictions;
+  unsigned long long Num_Thrashed;
+  unsigned long long Num_Coal;
+
   void reinit_clock_domains(void);
   int next_clock_domain(void);
   void issue_block2core();

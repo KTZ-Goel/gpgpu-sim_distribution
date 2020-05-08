@@ -808,6 +808,10 @@ gpgpu_sim::gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
   partiton_replys_in_parallel = 0;
   partiton_replys_in_parallel_total = 0;
   numoffreepages = MAX_NUM_FREE_PAGES;
+  Num_Page_Fault = 0;
+  Num_Evictions = 0;
+  Num_Thrashed = 0;
+  Num_Coal = 0;
 
   m_cluster = new simt_core_cluster *[m_shader_config->n_simt_clusters];
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
@@ -1022,7 +1026,7 @@ void gpgpu_sim::print_stats() {
   gpgpu_ctx->stats->ptx_file_line_stats_write_file();
   gpu_print_stat();
 
-  if (g_network_mode) {
+  if (g_network_mode && 0) {  // removed interconnect details
     printf(
         "----------------------------Interconnect-DETAILS----------------------"
         "----------\n");
@@ -1032,6 +1036,12 @@ void gpgpu_sim::print_stats() {
         "----------------------------END-of-Interconnect-DETAILS---------------"
         "----------\n");
   }
+  printf("\n\n ----------------------------- UVM Stats ---------------------------------\n");
+  printf(" gpu total pages used by malloc managed : %ld", MAX_NUM_FREE_PAGES - numoffreepages);
+  printf(" gpu page faults total : %ld", Num_Page_Fault);
+  printf(" gpu Page Evictions : %d", Num_Evictions);
+  printf(" gpu page thrashing experienced : %ld", Num_Thrashed);
+  printf(" gpu page thrashing experienced : %ld", Num_Coal);
 }
 
 void gpgpu_sim::deadlock_check() {
@@ -1260,21 +1270,21 @@ void gpgpu_sim::gpu_print_stat() {
          (unsigned)((gpu_tot_sim_insn + gpu_sim_insn) / elapsed_time));
 
   // shader_print_l1_miss_stat( stdout );
-  shader_print_cache_stats(stdout);
+  //shader_print_cache_stats(stdout);
 
   cache_stats core_cache_stats;
   core_cache_stats.clear();
-  for (unsigned i = 0; i < m_config.num_cluster(); i++) {
-    m_cluster[i]->get_cache_stats(core_cache_stats);
-  }
-  printf("\nTotal_core_cache_stats:\n");
-  core_cache_stats.print_stats(stdout, "Total_core_cache_stats_breakdown");
-  printf("\nTotal_core_cache_fail_stats:\n");
-  core_cache_stats.print_fail_stats(stdout,
-                                    "Total_core_cache_fail_stats_breakdown");
-  shader_print_scheduler_stat(stdout, false);
+  // for (unsigned i = 0; i < m_config.num_cluster(); i++) {
+  //   m_cluster[i]->get_cache_stats(core_cache_stats);
+  // }
+  // printf("\nTotal_core_cache_stats:\n");
+  // core_cache_stats.print_stats(stdout, "Total_core_cache_stats_breakdown");
+  // printf("\nTotal_core_cache_fail_stats:\n");
+  // core_cache_stats.print_fail_stats(stdout,
+  //                                   "Total_core_cache_fail_stats_breakdown");
+  // shader_print_scheduler_stat(stdout, false);
 
-  m_shader_stats->print(stdout);
+  // m_shader_stats->print(stdout);
 #ifdef GPGPUSIM_POWER_MODEL
   if (m_config.g_power_simulation_enabled) {
     m_gpgpusim_wrapper->print_power_kernel_stats(
@@ -1284,14 +1294,14 @@ void gpgpu_sim::gpu_print_stat() {
   }
 #endif
 
-  // performance counter that are not local to one shader
-  m_memory_stats->memlatstat_print(m_memory_config->m_n_mem,
-                                   m_memory_config->nbk);
-  for (unsigned i = 0; i < m_memory_config->m_n_mem; i++)
-    m_memory_partition_unit[i]->print(stdout);
+  // // performance counter that are not local to one shader
+  // m_memory_stats->memlatstat_print(m_memory_config->m_n_mem,
+  //                                  m_memory_config->nbk);
+  // for (unsigned i = 0; i < m_memory_config->m_n_mem; i++)
+  //   m_memory_partition_unit[i]->print(stdout);
 
   // L2 cache stats
-  if (!m_memory_config->m_L2_config.disabled()) {
+  if (!m_memory_config->m_L2_config.disabled() && 0) {  // removed prints kshitiz
     cache_stats l2_stats;
     struct cache_sub_stats l2_css;
     struct cache_sub_stats total_l2_css;
@@ -2007,7 +2017,7 @@ void gpgpu_sim::memunit_cycle()
                   page_latency_queue_write.push_back(temp);
                   get_global_memory()->set_page_clean(evicted);  // Mark the page as clean.
                 }
-              }  
+              }
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
               std::cout<<"\nBringing in a new page : "<< temp.page_addr;
