@@ -541,7 +541,7 @@ void gpgpu_sim_config::reg_options(option_parser_t opp) {
                         "PCIE Transfer Latency", "4050");
   option_parser_register(opp, "-page_table_walk_latency", OPT_UINT64, &page_table_walk_latency,
                         "Page Table Walk Latency", "100");
-  option_parser_register(opp, "--num_gddr_pages", OPT_UINT64, &gddr_pages,
+  option_parser_register(opp, "-num_gddr_pages", OPT_UINT64, &gddr_pages,
                         "Number of GDDR pages available for managed allocations", "131072");
 
   option_parser_register(opp, "-gpgpu_max_insn", OPT_INT64, &gpu_max_insn_opt,
