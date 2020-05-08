@@ -94,7 +94,7 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 #define ICNT 0x08
 #define MEMUNIT 0x10
 
-//#define PREFETCH_RANDOM 1
+#define PREFETCH_RANDOM 1
 
 #define MEM_LATENCY_STAT_IMPL
 
@@ -1808,7 +1808,7 @@ void gpgpu_sim::do_prefetch()
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
             std::cout<<"\n\nPrefetching "<<temp.page_addr;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
             page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
