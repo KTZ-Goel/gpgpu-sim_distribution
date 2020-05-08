@@ -58,7 +58,7 @@ void *gpgpu_sim_thread_sequential(void *ctx_ptr) {
         ctx->the_gpgpusim->g_the_gpu->deadlock_check();
       }
       ctx->the_gpgpusim->g_the_gpu->print_stats();
-      std::cout<<"\nPF HITS::: Total PF Hits are "<<ctx->the_gpgpusim->g_the_gpu->get_global_memory()->get_pf_hits();
+      //std::cout<<"\nPF HITS::: Total PF Hits are "<<ctx->the_gpgpusim->g_the_gpu->get_global_memory()->get_pf_hits();
       ctx->the_gpgpusim->g_the_gpu->update_stats();
       ctx->print_simulation_time();
     }
@@ -268,6 +268,7 @@ void gpgpu_context::print_simulation_time() {
   printf("gpgpu_simulation_rate = %u (cycle/sec)\n", cycles_per_sec);
   printf("gpgpu_silicon_slowdown = %ux\n",
          the_gpgpusim->g_the_gpu->shader_clock() * 1000 / cycles_per_sec);
+  printf("\nPF HITS::: Total PF Hits are %ld \n", the_gpgpusim->g_the_gpu->get_global_memory()->get_pf_hits());  
   fflush(stdout);
 }
 
