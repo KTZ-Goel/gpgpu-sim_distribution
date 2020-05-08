@@ -1043,7 +1043,7 @@ void gpgpu_sim::print_stats() {
   printf(" gpu page faults total : %ld \n", Num_Page_Fault);
   printf(" gpu Page Evictions : %d\n", Num_Evictions);
   printf(" gpu page thrashing experienced : %ld\n", Num_Thrashed);
-  printf(" gpu page thrashing experienced : %ld\n", Num_Coal);
+  printf(" gpu page fault requests Coalesced : %ld\n", Num_Coal);
   printf(" gpu TLB hits : %ld\n", TLB_hits);
   printf(" gpu TLB misses : %ld\n", TLB_misses);
 }
