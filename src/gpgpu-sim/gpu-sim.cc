@@ -94,7 +94,7 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 #define ICNT 0x08
 #define MEMUNIT 0x10
 
-#define PREFETCH_RANDOM 1
+//#define PREFETCH_RANDOM 1
 
 #define MEM_LATENCY_STAT_IMPL
 
