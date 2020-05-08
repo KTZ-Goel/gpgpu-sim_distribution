@@ -2015,7 +2015,7 @@ void gpgpu_sim::memunit_cycle()
               k++;           
         #ifdef PREFETCH_RANDOM
               // Calculate Prefetch Page
-              mem_addr_t random_size = ( rand() % 2) + 1;
+              mem_addr_t random_size = ( rand() % 5) + 1;
 
               mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);
               if(get_global_memory()->does_page_exist(prefetch_address)){
