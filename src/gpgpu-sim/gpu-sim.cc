@@ -1958,6 +1958,11 @@ void gpgpu_sim::memunit_cycle()
           // Split the request of mf into pages, and check for each page whether already in list, if not, then put the new request 
           // in the list
           std::list<mem_addr_t> page_to_push = get_non_coal(page_list);
+          if(!(*iter).pending)
+          {
+            (*iter).pending = true;
+            Num_Coal += (page_list.size() - page_to_push.size());
+          }
           
           if(!page_to_push.empty())
           {
@@ -1965,7 +1970,7 @@ void gpgpu_sim::memunit_cycle()
             int k2 = 0;
 
             Num_Page_Fault += page_to_push.size();
-            Num_Coal += (page_list.size() - page_to_push.size());
+            //Num_Coal += (page_list.size() - page_to_push.size());
             page_read_latency_elem_t temp2;
             temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle;
             while(iter2 != page_to_push.end())
@@ -2081,6 +2086,7 @@ void gpgpu_sim::memunit_cycle()
       p_t.mf = mf;
       p_t.simtClusterID = i;
       p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + PAGE_TABLE_LOOKUP;
+      p_t.pending = false; 
       latency_queue.push_back(p_t); // stays in this queue till it is serviced on a page by page basis
     }
   }

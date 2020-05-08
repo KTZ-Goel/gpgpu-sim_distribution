@@ -493,6 +493,7 @@ class gpgpu_sim : public gpgpu_t {
     mem_fetch *mf;
     int simtClusterID;
     double ready_cycle;
+    bool pending;
   };
   struct page_read_latency_elem_t
   {
