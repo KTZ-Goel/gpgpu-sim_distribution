@@ -537,9 +537,9 @@ void gpgpu_sim_config::reg_options(option_parser_t opp) {
                          "Enable Random Prefetcher", "0");
   option_parser_register(opp, "-page_fault_latency", OPT_UINT64, &page_fault_latency,
                         "Page fault handling latency", "66645");
-  option_parser_register(opp, "-prefetch_HW", OPT_UINT64, &pcie_latency,
+  option_parser_register(opp, "-pcie_latency", OPT_UINT64, &pcie_latency,
                         "PCIE Transfer Latency", "4050");
-  option_parser_register(opp, "-prefetch_HW", OPT_UINT64, &page_table_walk_latency,
+  option_parser_register(opp, "-page_table_walk_latency", OPT_UINT64, &page_table_walk_latency,
                         "Page Table Walk Latency", "100");
   option_parser_register(opp, "--num_gddr_pages", OPT_UINT64, &gddr_pages,
                         "Number of GDDR pages available for managed allocations", "131072");
