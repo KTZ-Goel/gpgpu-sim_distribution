@@ -229,7 +229,7 @@ class memory_space_impl : public memory_space {
    virtual int	get_access_cnt	(mem_addr_t pg_index);
    virtual void	increase_access	(mem_addr_t pg_index);
    virtual void	decrease_access	(mem_addr_t pg_index);
-
+   virtual unsigned get_page_size();
  private:
   void read_single_block(mem_addr_t blk_idx, mem_addr_t addr, size_t length,
                          void *data) const;

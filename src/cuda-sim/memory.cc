@@ -109,6 +109,11 @@ template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_page_managed(mem_addr
   return m_data[page_index].is_managed();
 }
 
+template<unsigned BSIZE> unsigned memory_space_impl<BSIZE>::get_page_size()
+{
+  return m_log2_block_size;
+}
+
 template<unsigned BSIZE> void memory_space_impl<BSIZE>::set_pages_managed( mem_addr_t addr, size_t length)
 {
   mem_addr_t start_page = get_page_num (addr);
