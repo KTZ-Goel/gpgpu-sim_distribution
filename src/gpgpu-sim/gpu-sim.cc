@@ -1966,8 +1966,8 @@ void gpgpu_sim::memunit_cycle()
 
             Num_Page_Fault += page_to_push.size();
             
-            page_read_latency_elem_t temp;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle;
+            page_read_latency_elem_t temp2;
+            temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle;
             while(iter2 != page_to_push.end())
             {
               // Check each page whether it exit in write queue, if it does, then change the latency
@@ -1993,6 +1993,7 @@ void gpgpu_sim::memunit_cycle()
                 // Push the evicted page to the write queue
                 if(get_global_memory()->is_page_dirty(evicted))
                 {
+                  page_write_latency_elem_t temp;
                   temp.page_addr = evicted;
                   temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(DEFAULT_LATENCY);
                   get_global_memory()->invalidate_page(evicted);
@@ -2000,10 +2001,10 @@ void gpgpu_sim::memunit_cycle()
                   get_global_memory()->set_page_clean(evicted);  // Mark the page as clean.
                 }
               }
-              temp.page_addr = (*iter2);
+              temp2.page_addr = (*iter2);
               //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
-              temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
-              page_latency_queue_read.push_back(temp);
+              temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
+              page_latency_queue_read.push_back(temp2);
               iter2++;
               k++;           
         #ifdef PREFETCH_RANDOM
@@ -2022,7 +2023,7 @@ void gpgpu_sim::memunit_cycle()
               }
         #endif
             }
-            (*iter).ready_cycle = temp.ready_cycle;
+            (*iter).ready_cycle = temp2.ready_cycle;
           }
 
           iter++;
