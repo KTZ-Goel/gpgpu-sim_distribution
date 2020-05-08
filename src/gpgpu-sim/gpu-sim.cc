@@ -79,7 +79,7 @@ class gpgpu_sim_wrapper {};
 #include <string>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define MAX_NUM_FREE_PAGES 262144
+#define MAX_NUM_FREE_PAGES 131072
 
 
 bool g_interactive_debugger_enabled = false;
@@ -1040,7 +1040,7 @@ void gpgpu_sim::print_stats() {
   }
   printf("gpu_ipc = %12.4f\n", (float)gpu_sim_insn / gpu_sim_cycle);
   printf("\n\n ----------------------------- UVM Stats ---------------------------------\n");
-  printf(" gpu total global managed memory used : %lf /% \n", 100*(MAX_NUM_FREE_PAGES - numoffreepages)/MAX_NUM_FREE_PAGES);
+  printf(" gpu total global managed memory used : %lf % \n", (MAX_NUM_FREE_PAGES - numoffreepages));
   printf(" gpu page faults total : %ld \n", Num_Page_Fault);
   printf(" gpu Page Evictions : %d\n", Num_Evictions);
   printf(" gpu page thrashing experienced : %ld\n", Num_Thrashed);
