@@ -2530,17 +2530,25 @@ unsigned ldst_unit::clock_multiplier() const {
 }
 
 void ldst_unit::TLB_evict(mem_addr_t page_num){
+  if(!tlb_max_size) return;
+
   if(TLB_lookup(page_num))
     TLB.remove(page_num);
 }
 
 bool ldst_unit::TLB_lookup(mem_addr_t page_num)
 {
+  if(!tlb_max_size) return false;
+
   return std::find(TLB.begin(), TLB.end(), page_num) != TLB.end();
 }
 
 void ldst_unit::TLB_add(mem_addr_t page_num)
 {
+  if(!tlb_max_size){
+    return;
+  }
+
   if(TLB_lookup(page_num))
   {
     // We remove the accessed page from TLB list and add it to the front (LRU)
