@@ -2615,7 +2615,7 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
   }
   else{
     m_gpu->inc_TLB_misses();
-    // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
+    // The page is not present in the TLB... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);
 
     // remove instruction from the accessq as it is done ( Prevents from going to the regular memory_access)
