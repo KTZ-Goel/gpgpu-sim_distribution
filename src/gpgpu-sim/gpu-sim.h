@@ -615,6 +615,8 @@ class gpgpu_sim : public gpgpu_t {
   // backward pointer
   class gpgpu_context *gpgpu_ctx;
 
+  void inc_TLB_hits();
+  void inc_TLB_misses();
  private:
   // clocks
   
@@ -624,6 +626,8 @@ class gpgpu_sim : public gpgpu_t {
   unsigned long long Num_Evictions;
   unsigned long long Num_Thrashed;
   unsigned long long Num_Coal;
+  unsigned long long TLB_hits;
+  unsigned long long TLB_misses;
 
   void reinit_clock_domains(void);
   int next_clock_domain(void);

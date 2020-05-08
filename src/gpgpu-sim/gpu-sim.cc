@@ -812,6 +812,8 @@ gpgpu_sim::gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
   Num_Evictions = 0;
   Num_Thrashed = 0;
   Num_Coal = 0;
+  TLB_hits = 0;
+  TLB_misses = 0;
 
   m_cluster = new simt_core_cluster *[m_shader_config->n_simt_clusters];
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
@@ -1037,11 +1039,13 @@ void gpgpu_sim::print_stats() {
         "----------\n");
   }
   printf("\n\n ----------------------------- UVM Stats ---------------------------------\n");
-  printf(" gpu total pages used by malloc managed : %ld", MAX_NUM_FREE_PAGES - numoffreepages);
-  printf(" gpu page faults total : %ld", Num_Page_Fault);
-  printf(" gpu Page Evictions : %d", Num_Evictions);
-  printf(" gpu page thrashing experienced : %ld", Num_Thrashed);
-  printf(" gpu page thrashing experienced : %ld", Num_Coal);
+  printf(" gpu total pages used by malloc managed : %ld \n", MAX_NUM_FREE_PAGES - numoffreepages);
+  printf(" gpu page faults total : %ld \n", Num_Page_Fault);
+  printf(" gpu Page Evictions : %d\n", Num_Evictions);
+  printf(" gpu page thrashing experienced : %ld\n", Num_Thrashed);
+  printf(" gpu page thrashing experienced : %ld\n", Num_Coal);
+  printf(" gpu TLB hits : %ld\n", TLB_hits);
+  printf(" gpu TLB misses : %ld\n", TLB_misses);
 }
 
 void gpgpu_sim::deadlock_check() {
@@ -1755,6 +1759,8 @@ std::list<mem_addr_t> gpgpu_sim::get_non_coal(std::list<mem_addr_t> page_list){
       {
         new_req_list.push_back(*iter);
 	      //std::cout<<"\n new page request in... pushing to non_coal_list";
+      } else {
+        Num_Coal++;
       }
   }
 
@@ -1863,33 +1869,6 @@ void gpgpu_sim::subtractCount(mem_addr_t addr)
   }  
 }
 
-/*
-std::list<page_valid_elem_t> gpgpu_sim::get_victim_pages()
-{
-  std::list<page_valid_elem_t>::iterator iter = valid_page_list.begin();
-  std::list<page_valid_elem_t> temp;
-  while(iter != valid_page_list.end())
-  {
-    if(iter->count == 0)
-    {
-      temp.push_back(*iter);
-    }
-    iter++;
-  }
-  return temp;
-}
-
-mem_addr_t gpgpu_sim::reserve_page(){
-  
-  if(get_victim_pages().empty())
-    return 0;
-  
-  pa9ge_valid_elem_t victim = get_victim_pages().front();
-  valid_page_list.remove(victim);
-  
-  return victim.page_addr;
-}*/
-
 mem_addr_t gpgpu_sim::reserve_page()
 {
   std::list<page_valid_elem_t>::iterator iter = valid_page_list.begin();
@@ -1917,8 +1896,10 @@ double gpgpu_sim::get_rem_cycle(mem_addr_t page_num){
   std::list<page_write_latency_elem_t>::iterator iter = page_latency_queue_write.begin();
 
   while(iter != page_latency_queue_write.end()){
-    if(iter->page_addr == page_num)
+    if(iter->page_addr == page_num){
+      Num_Thrashed++;
       return (iter->ready_cycle - (gpu_sim_cycle + gpu_tot_sim_cycle));
+    }
     iter++;
   }
   
@@ -1985,7 +1966,9 @@ void gpgpu_sim::memunit_cycle()
           {
             std::list<mem_addr_t>::iterator iter2 = page_to_push.begin();
             int k2 = 0;
-  
+
+            Num_Page_Fault += page_to_push.size();
+
             while(iter2 != page_to_push.end())
             {
               // Check each page whether it exit in write queue, if it does, then change the latency
@@ -2005,6 +1988,7 @@ void gpgpu_sim::memunit_cycle()
                 }
                 //std::cout<<"\nA page is evicted page Num"<<evicted<<std::endl;
                 // TLB Flush
+                Num_Evictions++;
                 TLB_shootdown(evicted);
                 get_global_memory()->clear_page_prefetched(evicted);
                 // Push the evicted page to the write queue
@@ -2020,7 +2004,7 @@ void gpgpu_sim::memunit_cycle()
               }
               page_read_latency_elem_t temp;
               temp.page_addr = (*iter2);
-              std::cout<<"\nBringing in a new page : "<< temp.page_addr;
+              //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
               temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
               page_latency_queue_read.push_back(temp);
               iter2++;
@@ -2033,7 +2017,7 @@ void gpgpu_sim::memunit_cycle()
               if(get_global_memory()->does_page_exist(prefetch_address)){
                 struct prefetch_req  new_pref;
                 new_pref.start_addr = get_global_memory()->get_mem_addr(prefetch_address);
-                std::cout<<"\nRANDOM PREFETCH:: The address prefetched is "<< get_global_memory()->get_page_num(new_pref.start_addr);
+                //std::cout<<"\nRANDOM PREFETCH:: The address prefetched is "<< get_global_memory()->get_page_num(new_pref.start_addr);
                 new_pref.size = get_global_memory()->get_page_size();
                 new_pref.m_stream = NULL;
                 new_pref.active = true;
@@ -2104,7 +2088,7 @@ void gpgpu_sim::memunit_cycle()
     }
   }
 
-  printf("\nPF HITS::: Total PF Hits are %ld \n", get_global_memory()->get_pf_hits());  
+  //printf("\nPF HITS::: Total PF Hits are %ld \n", get_global_memory()->get_pf_hits());  
 }
 
 unsigned long long g_single_step =

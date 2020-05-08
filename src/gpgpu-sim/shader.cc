@@ -2595,35 +2595,26 @@ bool ldst_unit::accessq_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_re
                                                    inst.accessq_back().get_addr(), 
                                                    inst.accessq_back().get_size() 
                                                   )) 
-  {  // Check if page is managed, if not      
-    //std::cout<<"\nPages not managed!";
+  {  // Check if page is managed, if not
     return true;
   }
 
   if((inst.accessq_back().get_type() != GLOBAL_ACC_R) && (inst.accessq_back().get_type() != GLOBAL_ACC_W)){
-    //std::cout<<"\n not a Gloabl access";
     return true;
   }
   
-  //std::cout<<"\n Is a global access for a managed page";
-  // std::list<mem_addr_t> page_list = m_gpu->get_global_memory()->get_faulty_pages(inst.accessq_back().get_addr(), inst.accessq_back().get_size());
-  // if(page_list.empty()){   // Check if all pages are valid
-  //   // All pages was found in TLB/Page table and doesn't incur a page fault
-  //   std::cout<<"\nFound in Page table valid";
-  //   return true;
-  // }
   mem_fetch *mf =  m_mf_allocator->alloc(inst, inst.accessq_back(),
                           m_core->get_gpu()->gpu_sim_cycle +
                               m_core->get_gpu()->gpu_tot_sim_cycle);
   m_gpu->refresh_page_call(mf, true);
   if(TLB_lookup(page_no)){
     // The page was already found in TLB. On TLB hit refresh the TLB and return true.
+    m_gpu->inc_TLB_hits();
     TLB_add(page_no);
     return true;
   }
   else{
-    
-    //std::cout<<"\nGotto fetch from page table for page "<<page_no;
+    m_gpu->inc_TLB_misses();
     // The page is not present in the page table... Add to the core_cu queue to incur page fault latency
     m_core_cu_queue.push_back(mf);
 
