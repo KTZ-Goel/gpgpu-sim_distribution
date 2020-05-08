@@ -95,15 +95,22 @@ Done till 4
 ------------- Added Page Eviction based on LRU policy
 All done for now
 
+-------------------------------------- Added Random HW Prefetcher ( fetches a page at a random distance (mod 5) from a faulty page)
+Getting better IPC when runnign with than without.... Not much effect if Cuda Mem Prefetch is called earlier
+
+
+
 
 STats
 
-TLB -> Disable TLB (size =0) with and without 
+TLB -> Disable TLB (size =0) with and without
     - IPC
-    - number of page faults 
+    - number of page faults
 
 SW prefetching -> without CudaMemPrefetchAsync
     - IPC
     - Number of page-faults
 
-
+HW Prefetching -> without cudaMemprefetch
+	- show ipc difference with and without hw prefetcher
+	- show number of observed page faults in case of page faults
