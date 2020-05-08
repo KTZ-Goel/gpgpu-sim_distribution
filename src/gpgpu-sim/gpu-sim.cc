@@ -1822,7 +1822,7 @@ void gpgpu_sim::do_prefetch()
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
             //std::cout<<"\n\nPrefetching "<<temp.page_addr;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*m_config->pcie_latency);
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*m_config.pcie_latency);
             page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
@@ -2002,7 +2002,7 @@ void gpgpu_sim::memunit_cycle()
                 {
                   page_write_latency_elem_t temp;
                   temp.page_addr = evicted;
-                  temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(m_config->pcie_latency);
+                  temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(m_config.pcie_latency);
                   get_global_memory()->invalidate_page(evicted);
                   page_latency_queue_write.push_back(temp);
                   get_global_memory()->set_page_clean(evicted);  // Mark the page as clean.
@@ -2010,12 +2010,12 @@ void gpgpu_sim::memunit_cycle()
               }
               temp2.page_addr = (*iter2);
               //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
-              temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(m_config->pcie_latency + m_config->page_fault_latency);
+              temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(m_config.pcie_latency + m_config.page_fault_latency);
               page_latency_queue_read.push_back(temp2);
               iter2++;
               k++;
 
-              if(m_config->prefetch_HW){
+              if(m_config.prefetch_HW){
                 // Calculate Prefetch Page
                 mem_addr_t random_size = ( rand() % 5) + 1;
 
@@ -2088,7 +2088,7 @@ void gpgpu_sim::memunit_cycle()
       latency_elem_t p_t;
       p_t.mf = mf;
       p_t.simtClusterID = i;
-      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + m_config->page_table_walk_latency;
+      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + m_config.page_table_walk_latency;
       p_t.pending = false;
       latency_queue.push_back(p_t); // stays in this queue till it is serviced on a page by page basis
     }
