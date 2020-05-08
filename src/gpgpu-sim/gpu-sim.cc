@@ -2094,7 +2094,7 @@ void gpgpu_sim::memunit_cycle()
     }
   }
 
-  printf("\nPF HITS::: Total PF Hits are %ld \n", the_gpgpusim->g_the_gpu->get_global_memory()->get_pf_hits());  
+  printf("\nPF HITS::: Total PF Hits are %ld \n", get_global_memory()->get_pf_hits());  
 }
 
 unsigned long long g_single_step =
