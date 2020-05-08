@@ -2020,7 +2020,7 @@ void gpgpu_sim::memunit_cycle()
               mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);   // Add code here
               struct prefetch_req  new_pref;
               new_pref.start_addr = prefetch_address;
-              new_pref.size = m_config.page_size;
+              new_pref.size = 4096;
               new_pref.m_stream = NULL;
               new_pref.active = true;
               prefetch_buffer.push_back(new_pref);

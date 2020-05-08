@@ -94,3 +94,16 @@ Done till 4
 
 ------------- Added Page Eviction based on LRU policy
 All done for now
+
+
+STats
+
+TLB -> Disable TLB (size =0) with and without 
+    - IPC
+    - number of page faults 
+
+SW prefetching -> without CudaMemPrefetchAsync
+    - IPC
+    - Number of page-faults
+
+
