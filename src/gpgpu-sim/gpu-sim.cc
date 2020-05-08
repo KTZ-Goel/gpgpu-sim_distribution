@@ -94,8 +94,6 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 #define ICNT 0x08
 #define MEMUNIT 0x10
 
-#define PREFETCH_RANDOM 1
-
 #define MEM_LATENCY_STAT_IMPL
 
 #include "mem_latency_stat.h"
@@ -534,6 +532,18 @@ void gpgpu_sim_config::reg_options(option_parser_t opp) {
   power_config::reg_options(opp);
   option_parser_register(opp, "-gpgpu_max_cycle", OPT_INT64, &gpu_max_cycle_opt,
                          "terminates gpu simulation early (0 = no limit)", "0");
+  
+  option_parser_register(opp, "-prefetch_HW", OPT_BOOL, &prefetch_HW,
+                         "Enable Random Prefetcher", "0");
+  option_parser_register(opp, "-page_fault_latency", OPT_UINT64, &page_fault_latency,
+                        "Page fault handling latency", "66645");
+  option_parser_register(opp, "-prefetch_HW", OPT_UINT64, &pcie_latency,
+                        "PCIE Transfer Latency", "4050");
+  option_parser_register(opp, "-prefetch_HW", OPT_UINT64, &page_table_walk_latency,
+                        "Page Table Walk Latency", "100");
+  option_parser_register(opp, "--num_gddr_pages", OPT_UINT64, &gddr_pages,
+                        "Number of GDDR pages available for managed allocations", "131072");
+
   option_parser_register(opp, "-gpgpu_max_insn", OPT_INT64, &gpu_max_insn_opt,
                          "terminates gpu simulation early (0 = no limit)", "0");
   option_parser_register(opp, "-gpgpu_max_cta", OPT_INT32, &gpu_max_cta_opt,
@@ -812,7 +822,7 @@ gpgpu_sim::gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
   gpu_tot_sim_cycle_parition_util = 0;
   partiton_replys_in_parallel = 0;
   partiton_replys_in_parallel_total = 0;
-  numoffreepages = MAX_NUM_FREE_PAGES;
+  numoffreepages = config->gddr_pages;
   Num_Page_Fault = 0;
   Num_Evictions = 0;
   Num_Thrashed = 0;
@@ -1723,22 +1733,6 @@ void gpgpu_sim::issue_block2core() {
 
 // Methods for corresponding memory unit start now
 
-#define DEFAULT_LATENCY 10     // PCIE transfer latency
-#define PAGE_FAULT_LATENCY 100    // Page fault latency
-#define PAGE_TABLE_LOOKUP 10
-
-// void gpgpu_sim::register_TLBflush(std::function <void(mem_addr_t)> core_TLB){
-//   TLBflush_list.push_back(core_TLB);
-// }
-
-// void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
-//   std::cout<<"\n\n TLB Shootdown : "<<page_num;
-//   for( list<std::function<void(mem_addr_t)>>::iterator iter = TLBflush_list.begin();
-//     iter != TLBflush_list.end(); iter++){
-//       (*iter)(page_num);
-//     }
-// }
-
 void gpgpu_sim::TLB_shootdown(mem_addr_t page_num){
   //std::cout<<"\n\n TLB Shootdown : "<<page_num;
   for (unsigned i = 0; i < m_shader_config->n_simt_clusters; i++)
@@ -1828,7 +1822,7 @@ void gpgpu_sim::do_prefetch()
             page_read_latency_elem_t temp; 
             temp.page_addr = (*iter2);
             //std::cout<<"\n\nPrefetching "<<temp.page_addr;
-            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY) + PAGE_FAULT_LATENCY;
+            temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*m_config->pcie_latency);
             page_latency_queue_read.push_back(temp);
             iter2++;
             k++;
@@ -2008,7 +2002,7 @@ void gpgpu_sim::memunit_cycle()
                 {
                   page_write_latency_elem_t temp;
                   temp.page_addr = evicted;
-                  temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(DEFAULT_LATENCY);
+                  temp.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + k2*(m_config->pcie_latency);
                   get_global_memory()->invalidate_page(evicted);
                   page_latency_queue_write.push_back(temp);
                   get_global_memory()->set_page_clean(evicted);  // Mark the page as clean.
@@ -2016,25 +2010,26 @@ void gpgpu_sim::memunit_cycle()
               }
               temp2.page_addr = (*iter2);
               //std::cout<<"\nBringing in a new page : "<< temp.page_addr;
-              temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(2*DEFAULT_LATENCY + PAGE_FAULT_LATENCY);
+              temp2.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + get_rem_cycle(*iter2) + k*(m_config->pcie_latency + m_config->page_fault_latency);
               page_latency_queue_read.push_back(temp2);
               iter2++;
               k++;
-        #ifdef PREFETCH_RANDOM
-              // Calculate Prefetch Page
-              mem_addr_t random_size = ( rand() % 5) + 1;
 
-              mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);
-              if(get_global_memory()->does_page_exist(prefetch_address)){
-                struct prefetch_req  new_pref;
-                new_pref.start_addr = get_global_memory()->get_mem_addr(prefetch_address);
-                //std::cout<<"\nRANDOM PREFETCH:: The address prefetched is "<< get_global_memory()->get_page_num(new_pref.start_addr);
-                new_pref.size = get_global_memory()->get_page_size();
-                new_pref.m_stream = NULL;
-                new_pref.active = true;
-                prefetch_buffer.push_back(new_pref);
+              if(m_config->prefetch_HW){
+                // Calculate Prefetch Page
+                mem_addr_t random_size = ( rand() % 5) + 1;
+
+                mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);
+                if(get_global_memory()->does_page_exist(prefetch_address)){
+                  struct prefetch_req  new_pref;
+                  new_pref.start_addr = get_global_memory()->get_mem_addr(prefetch_address);
+                  //std::cout<<"\nRANDOM PREFETCH:: The address prefetched is "<< get_global_memory()->get_page_num(new_pref.start_addr);
+                  new_pref.size = get_global_memory()->get_page_size();
+                  new_pref.m_stream = NULL;
+                  new_pref.active = true;
+                  prefetch_buffer.push_back(new_pref);
+                }
               }
-        #endif
             }
           }
 
@@ -2093,8 +2088,8 @@ void gpgpu_sim::memunit_cycle()
       latency_elem_t p_t;
       p_t.mf = mf;
       p_t.simtClusterID = i;
-      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + PAGE_TABLE_LOOKUP;
-      p_t.pending = false; 
+      p_t.ready_cycle = gpu_sim_cycle + gpu_tot_sim_cycle + m_config->page_table_walk_latency;
+      p_t.pending = false;
       latency_queue.push_back(p_t); // stays in this queue till it is serviced on a page by page basis
     }
   }

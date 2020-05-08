@@ -398,6 +398,11 @@ class gpgpu_sim_config : public power_config,
   double dram_period;
   double l2_period;
 
+  bool prefetch_HW;
+  unsigned long long page_fault_latency;
+  unsigned long long pcie_latency;
+  unsigned long long page_table_walk_latency;
+  unsigned long long gddr_pages;
   // GPGPU-Sim timing model options
   unsigned long long gpu_max_cycle_opt;
   unsigned long long gpu_max_insn_opt;
