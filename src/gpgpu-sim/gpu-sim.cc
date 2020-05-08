@@ -822,7 +822,7 @@ gpgpu_sim::gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
   gpu_tot_sim_cycle_parition_util = 0;
   partiton_replys_in_parallel = 0;
   partiton_replys_in_parallel_total = 0;
-  numoffreepages = config->gddr_pages;
+  numoffreepages = config.gddr_pages;
   Num_Page_Fault = 0;
   Num_Evictions = 0;
   Num_Thrashed = 0;
