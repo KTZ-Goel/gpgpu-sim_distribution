@@ -178,7 +178,7 @@ class memory_space {
    
   // Method to find if the page is dirty
   virtual bool is_page_dirty(mem_addr_t page_num) = 0;
-
+  virtual bool does_page_exist(mem_addr_t page_num) = 0;
   // Method to set the page as dirty
   virtual void set_pages_dirty( mem_addr_t addr, size_t length) = 0;
   virtual void set_page_clean( mem_addr_t page_num) = 0;
@@ -217,7 +217,7 @@ class memory_space_impl : public memory_space {
   // Method to set the page as dirty
   virtual void set_pages_dirty( mem_addr_t addr, size_t length);
   virtual void set_page_clean( mem_addr_t page_num);
-
+  virtual bool does_page_exist(mem_addr_t page_num);
   // Methods to check page table(m_data) and make some changes
    virtual void	validate_page	(mem_addr_t pg_index);
    virtual void	invalidate_page	(mem_addr_t pg_index);

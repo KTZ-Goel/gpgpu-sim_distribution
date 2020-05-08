@@ -249,6 +249,11 @@ template<unsigned BSIZE> bool memory_space_impl<BSIZE>::is_valid (mem_addr_t pg_
    return m_data[pg_index].is_valid();
 }
 
+template<unsigned BSIZE> bool memory_space_impl<BSIZE>::does_page_exist (mem_addr_t pg_index) 
+{
+    return (m_data.find(pg_index) != m_data.end());
+}
+
 // set the valid flag of corresponding physical page 
 template<unsigned BSIZE> void memory_space_impl<BSIZE>::validate_page (mem_addr_t pg_index)
 {

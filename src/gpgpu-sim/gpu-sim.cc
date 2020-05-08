@@ -2017,14 +2017,16 @@ void gpgpu_sim::memunit_cycle()
               // Calculate Prefetch Page
               mem_addr_t random_size = ( rand() % 2) + 1;
 
-              mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);   // Add code here
-              struct prefetch_req  new_pref;
-              new_pref.start_addr = get_global_memory()->get_mem_addr(prefetch_address);
-              std::cout<<"\nRANDOM PREFETCH:: The address prefetched is "<< get_global_memory()->get_page_num(new_pref.start_addr);
-              new_pref.size = get_global_memory()->get_page_size();
-              new_pref.m_stream = NULL;
-              new_pref.active = true;
-              prefetch_buffer.push_back(new_pref);
+              mem_addr_t prefetch_address =  random_size + get_global_memory()->get_page_num(mf->get_addr() + mf->get_access_size() - 1);
+              if(get_global_memory()->does_page_exist(prefetch_address)){
+                struct prefetch_req  new_pref;
+                new_pref.start_addr = get_global_memory()->get_mem_addr(prefetch_address);
+                std::cout<<"\nRANDOM PREFETCH:: The address prefetched is "<< get_global_memory()->get_page_num(new_pref.start_addr);
+                new_pref.size = get_global_memory()->get_page_size();
+                new_pref.m_stream = NULL;
+                new_pref.active = true;
+                prefetch_buffer.push_back(new_pref);
+              }
         #endif  
             }
             //(*iter).ready_cycle = temp.ready_cycle;
