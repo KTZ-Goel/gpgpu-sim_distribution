@@ -1953,6 +1953,7 @@ void gpgpu_sim::memunit_cycle()
         if(page_list.empty())
         {
           // Found in Page Table (Page Table Hit)
+          get_global_memory()->register_pf_hits(mf->get_addr(), mf->get_access_size());
           getSIMTCluster((*iter).simtClusterID)->push_gmmu_cu_queue(mf);
           latency_queue.erase(iter++);
         }
@@ -1970,7 +1971,7 @@ void gpgpu_sim::memunit_cycle()
             (*iter).pending = true;
             Num_Coal += (page_list.size() - page_to_push.size());
             Num_Page_Fault += page_to_push.size();
-            get_global_memory()->register_pf_hits(mf->get_addr(), mf->get_access_size());
+            
           }
           
           if(!page_to_push.empty())
