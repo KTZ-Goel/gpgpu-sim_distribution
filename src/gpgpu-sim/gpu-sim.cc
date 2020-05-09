@@ -1053,7 +1053,14 @@ void gpgpu_sim::print_stats() {
         "----------------------------END-of-Interconnect-DETAILS---------------"
         "----------\n");
   }
-  printf("\n gpu_ipc = %12.4f\n", (float)gpu_sim_insn / gpu_sim_cycle);
+  
+  printf("gpu_sim_cycle = %lld\n", gpu_sim_cycle);
+  printf("gpu_sim_insn = %lld\n", gpu_sim_insn);
+  printf("gpu_ipc = %12.4f\n", (float)gpu_sim_insn / gpu_sim_cycle);
+  printf("gpu_tot_sim_cycle = %lld\n", gpu_tot_sim_cycle + gpu_sim_cycle);
+  printf("gpu_tot_sim_insn = %lld\n", gpu_tot_sim_insn + gpu_sim_insn);
+  printf("gpu_tot_ipc = %12.4f\n", (float)(gpu_tot_sim_insn + gpu_sim_insn) /
+                                       (gpu_tot_sim_cycle + gpu_sim_cycle));
   printf("\n ----------------------------- UVM Stats ---------------------------------\n");
   printf(" gpu total global managed memory used : %ld \n", (MAX_NUM_FREE_PAGES - numoffreepages));
   printf(" gpu page faults total : %ld \n", Num_Page_Fault);
